@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-type UpdateState = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'up-to-date' | 'error'
+type UpdateState = 'idle' | 'checking' | 'downloading' | 'downloaded' | 'up-to-date' | 'error'
 
 export default function UpdateNotification() {
   const [state, setState] = useState<UpdateState>('idle')
@@ -17,8 +17,9 @@ export default function UpdateNotification() {
 
   useEffect(() => {
     return window.electronAPI.onUpdateAvailable((info) => {
-      setState('available')
       setVersion(info.version)
+      setState('downloading')
+      // autoDownload: true -> se descarga solo
     })
   }, [])
 
@@ -47,22 +48,19 @@ export default function UpdateNotification() {
         {state === 'checking' && (
           <><span className="update-spinner" /> Checking for updates...</>
         )}
-        {state === 'available' && (
-          <>
-            <span className="update-icon">⬇</span>
-            <span>Update v{version} available</span>
-            <button className="update-btn" onClick={() => window.electronAPI.downloadUpdate()}>Download</button>
-            <button className="update-btn dismiss" onClick={() => setState('idle')}>Skip</button>
-          </>
-        )}
         {state === 'downloading' && (
-          <><span className="update-spinner" /> Downloading... {progress}%</>
+          <><span className="update-spinner" /> Updating to v{version}... {progress}%</>
         )}
         {state === 'downloaded' && (
           <>
-            <span className="update-icon">✓</span>
-            <span>Update ready</span>
-            <button className="update-btn" onClick={() => window.electronAPI.installUpdate()}>Install & Restart</button>
+            <span className="update-icon">⬇</span>
+            <span>Update v{version} ready</span>
+            <button className="update-btn" onClick={() => window.electronAPI.installUpdate()}>
+              Restart & Update
+            </button>
+            <button className="update-btn dismiss" onClick={() => setState('idle')}>
+              Later
+            </button>
           </>
         )}
         {state === 'up-to-date' && <><span className="update-icon">✓</span> ZEK BRIDGE is up to date</>}

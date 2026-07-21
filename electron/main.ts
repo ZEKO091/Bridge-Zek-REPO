@@ -139,8 +139,11 @@ function createWindow() {
 }
 
 // ── Auto Updater ──
-autoUpdater.autoDownload = false
+autoUpdater.autoDownload = true
 autoUpdater.autoInstallOnAppQuit = true
+// Cuando hay update, lo descarga automáticamente en background.
+// El instalador reemplaza los archivos en el mismo lugar (no desinstala).
+// Los datos del usuario en AppData/Roaming se conservan siempre.
 
 app.whenReady().then(async () => {
   createWindow()
