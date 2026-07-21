@@ -1,0 +1,282 @@
+import { app, BrowserWindow, ipcMain } from 'electron'
+import path from 'path'
+import { spawn, execSync } from 'child_process'
+import os from 'os'
+import { autoUpdater } from 'electron-updater'
+
+let nodePty: any = null
+try { nodePty = require('node-pty') } catch { console.warn('node-pty failed to load. Terminals fallback mode.') }
+
+let mainWindow: BrowserWindow | null = null
+const terminals: Map<string, any> = new Map()
+let terminalCounter = 0
+
+// ── CPU tracking ──
+let cpuLoad = 0
+let prevIdle = 0
+let prevTotal = 0
+
+function pollCPU() {
+  const cpus = os.cpus()
+  let idle = 0, total = 0
+  for (const cpu of cpus) {
+    for (const type in cpu.times) {
+      total += (cpu.times as any)[type]
+    }
+    idle += cpu.times.idle
+  }
+  if (prevTotal > 0) {
+    const dIdle = idle - prevIdle
+    const dTotal = total - prevTotal
+    cpuLoad = Math.round(100 * (1 - dIdle / dTotal))
+  }
+  prevIdle = idle
+  prevTotal = total
+}
+
+// ── GPU detection ──
+let gpuName = 'Unknown'
+let gpuLoad = 0
+function detectGPU() {
+  try {
+    const out = execSync('wmic path win32_VideoController get name', { encoding: 'utf8', timeout: 3000 })
+    const lines = out.split('\n').map(l => l.trim()).filter(l => l && !l.includes('Name'))
+    if (lines.length > 0) gpuName = lines[0]
+  } catch {}
+}
+function pollGPU() {
+  try {
+    const out = execSync('nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits', { encoding: 'utf8', timeout: 2000 })
+    gpuLoad = Math.min(100, Math.max(0, parseInt(out.trim()))) || 0
+  } catch {
+    gpuLoad = -1
+  }
+}
+
+// ── Tool detection ──
+interface DetectedTool {
+  name: string
+  version: string
+  path: string
+  installed: boolean
+}
+
+let detectedTools: DetectedTool[] = []
+
+function detectTools(): Promise<DetectedTool[]> {
+  const checks = [
+    { name: 'Node.js', cmd: 'node --version' },
+    { name: 'npm', cmd: 'npm --version' },
+    { name: 'Python', cmd: 'python --version' },
+    { name: 'Python 3', cmd: 'python3 --version' },
+    { name: 'Git', cmd: 'git --version' },
+    { name: 'Ollama', cmd: 'ollama --version' },
+    { name: 'PowerShell', cmd: 'pwsh --version' },
+    { name: 'VS Code', cmd: 'code --version' },
+    { name: 'Docker', cmd: 'docker --version' },
+    { name: 'npx', cmd: 'npx --version' },
+    { name: 'yarn', cmd: 'yarn --version' },
+    { name: 'pnpm', cmd: 'pnpm --version' },
+    { name: 'rustc', cmd: 'rustc --version' },
+    { name: 'go', cmd: 'go version' },
+    { name: 'FFmpeg', cmd: 'ffmpeg -version' },
+  ]
+
+  const results: DetectedTool[] = []
+
+  return new Promise((resolve) => {
+    let completed = 0
+    for (const check of checks) {
+      const child = spawn('cmd', ['/c', check.cmd], { windowsHide: true, timeout: 3000 })
+      let stdout = ''
+      let stderr = ''
+
+      child.stdout?.on('data', (d) => { stdout += d.toString() })
+      child.stderr?.on('data', (d) => { stderr += d.toString() })
+      child.on('error', () => {
+        results.push({ name: check.name, version: '', path: '', installed: false })
+        completed++; if (completed === checks.length) resolve(results)
+      })
+      child.on('close', (code) => {
+        const output = (stdout || stderr).trim()
+        if (code === 0 && output) {
+          const version = output.split('\n')[0].trim()
+          results.push({ name: check.name, version, path: '', installed: true })
+        } else {
+          results.push({ name: check.name, version: '', path: '', installed: false })
+        }
+        completed++; if (completed === checks.length) resolve(results)
+      })
+    }
+  })
+}
+
+// ── Window ──
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1600,
+    height: 1000,
+    minWidth: 1200,
+    minHeight: 800,
+    frame: false,
+    transparent: true,
+    backgroundColor: '#050608',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false,
+    },
+  })
+
+  if (process.env.VITE_DEV_SERVER_URL) {
+    mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL)
+  } else {
+    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
+  }
+
+  mainWindow.on('closed', () => { mainWindow = null })
+}
+
+// ── Auto Updater ──
+autoUpdater.autoDownload = false
+autoUpdater.autoInstallOnAppQuit = true
+
+app.whenReady().then(async () => {
+  createWindow()
+  detectGPU()
+  detectedTools = await detectTools()
+  mainWindow?.webContents.send('system:tools', detectedTools)
+
+  autoUpdater.checkForUpdates()
+
+  autoUpdater.on('checking-for-update', () => {
+    mainWindow?.webContents.send('update:status', 'checking')
+  })
+
+  autoUpdater.on('update-available', (info) => {
+    mainWindow?.webContents.send('update:available', {
+      version: info.version,
+      releaseDate: info.releaseDate,
+      releaseNotes: info.releaseNotes,
+    })
+  })
+
+  autoUpdater.on('update-not-available', () => {
+    mainWindow?.webContents.send('update:status', 'up-to-date')
+  })
+
+  autoUpdater.on('download-progress', (progress) => {
+    mainWindow?.webContents.send('update:progress', {
+      percent: progress.percent,
+      bytesPerSecond: progress.bytesPerSecond,
+      transferred: progress.transferred,
+      total: progress.total,
+    })
+  })
+
+  autoUpdater.on('update-downloaded', () => {
+    mainWindow?.webContents.send('update:downloaded')
+  })
+
+  autoUpdater.on('error', (err) => {
+    mainWindow?.webContents.send('update:error', err.message)
+  })
+
+  pollCPU()
+  setInterval(() => {
+    pollCPU()
+    const totalMem = os.totalmem()
+    const freeMem = os.freemem()
+    const usedMem = totalMem - freeMem
+    const ramPercent = Math.round((usedMem / totalMem) * 100)
+    const ramGB = (usedMem / 1024 / 1024 / 1024).toFixed(1)
+
+    pollGPU()
+
+    mainWindow?.webContents.send('system:metrics', {
+      cpu: cpuLoad,
+      gpu: gpuLoad > -1 ? gpuLoad : null,
+      gpuName,
+      ram: ramPercent,
+      ramGB: parseFloat(ramGB),
+      ramTotal: (totalMem / 1024 / 1024 / 1024).toFixed(1),
+    })
+  }, 2000)
+})
+
+app.on('window-all-closed', () => {
+  terminals.forEach((t: any) => { try { t.kill?.() } catch {} })
+  terminals.clear()
+  if (process.platform !== 'darwin') app.quit()
+})
+
+app.on('activate', () => { if (mainWindow === null) createWindow() })
+
+ipcMain.on('window:minimize', () => mainWindow?.minimize())
+ipcMain.on('window:maximize', () => {
+  if (mainWindow?.isMaximized()) mainWindow.unmaximize()
+  else mainWindow?.maximize()
+})
+ipcMain.on('window:close', () => mainWindow?.close())
+
+ipcMain.handle('system:getTools', () => detectedTools)
+
+ipcMain.handle('update:check', () => { autoUpdater.checkForUpdates() })
+ipcMain.handle('update:download', () => { autoUpdater.downloadUpdate() })
+ipcMain.handle('update:install', () => { autoUpdater.quitAndInstall() })
+
+ipcMain.handle('terminal:create', () => {
+  const id = `term-${++terminalCounter}`
+  if (!nodePty) {
+    mainWindow?.webContents.send(`terminal:data:${id}`, 'node-pty module failed to load.\r\nInstall native build tools and run: npm run rebuild\r\n\r\n')
+    mainWindow?.webContents.send(`terminal:data:${id}`, 'ZEK BRIDGE Terminal (fallback mode)\r\n> ')
+    terminals.set(id, { pid: -1 })
+    setTimeout(() => mainWindow?.webContents.send(`terminal:exit:${id}`), 3000)
+    return id
+  }
+
+  const shell = process.env.COMSPEC || 'C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe'
+  const term = nodePty.spawn(shell, [], {
+    name: 'xterm-color',
+    cols: 120, rows: 30,
+    cwd: process.env.USERPROFILE || 'C:\\',
+    env: { ...process.env },
+  })
+
+  term.onData((data: string) => mainWindow?.webContents.send(`terminal:data:${id}`, data))
+  term.onExit(() => { terminals.delete(id); mainWindow?.webContents.send(`terminal:exit:${id}`) })
+
+  terminals.set(id, term)
+
+  setInterval(() => {
+    if (!terminals.has(id)) return
+    try {
+      const pid = term.pid
+      if (!pid) return
+      const out = execSync(`wmic process where ProcessId=${pid} get WorkingSetSize,PercentProcessorTime`, { encoding: 'utf8', timeout: 1000 })
+      const lines = out.split('\n').map(l => l.trim()).filter(l => l && !l.includes('WorkingSetSize'))
+      if (lines.length > 0) {
+        const parts = lines[0].split(/\s+/).filter(Boolean)
+        const ramMB = Math.round((parseInt(parts[0]) || 0) / 1024)
+        mainWindow?.webContents.send(`terminal:stats:${id}`, { ram: ramMB })
+      }
+    } catch {}
+  }, 3000)
+
+  return id
+})
+
+ipcMain.handle('terminal:write', (_e, id: string, data: string) => {
+  const term = terminals.get(id)
+  if (term?.write) term.write(data)
+})
+ipcMain.handle('terminal:resize', (_e, id: string, cols: number, rows: number) => {
+  const term = terminals.get(id)
+  if (term?.resize) term.resize(cols, rows)
+})
+ipcMain.handle('terminal:kill', (_e, id: string) => {
+  const term = terminals.get(id)
+  if (term?.kill) { try { term.kill() } catch {} }
+  terminals.delete(id)
+})
