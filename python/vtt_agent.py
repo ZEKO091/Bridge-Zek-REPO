@@ -1,5 +1,4 @@
 import json, sys, os, time, threading, numpy as np
-from pynput import keyboard
 
 os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
@@ -18,6 +17,11 @@ try:
 except Exception as e:
     print(f"[VTT] Error: pyautogui — {e}", file=sys.stderr); sys.exit(1)
 
+try:
+    import keyboard
+except Exception as e:
+    print(f"[VTT] Error: keyboard — {e}", file=sys.stderr); sys.exit(1)
+
 MODEL = os.environ.get("WHISPER_MODEL", "tiny")
 SAMPLE_RATE = 16000
 USE_CUDA = os.environ.get("VTT_GPU", "").lower() in ("1", "true", "yes")
@@ -26,7 +30,7 @@ model = None
 recording = False
 audio_data = []
 stream = None
-ctrl_pressed = False
+ctrl_down = False
 
 def load_model():
     global model
@@ -69,22 +73,20 @@ def type_text(text):
     except Exception as e:
         print(f"[VTT] Error typing: {e}", file=sys.stderr)
 
-def on_press(key):
-    global ctrl_pressed, recording
-    try:
-        if key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
-            ctrl_pressed = True
-        elif key == keyboard.Key.space and ctrl_pressed and not recording:
+def on_event(e):
+    global recording, ctrl_down
+    if e.event_type == "down":
+        if e.name in ("ctrl", "ctrl_l", "ctrl_r"):
+            ctrl_down = True
+        elif e.name == "space" and ctrl_down and not recording:
             print("[VTT] Recording...", file=sys.stderr)
             start_recording()
-    except: pass
-
-def on_release(key):
-    global ctrl_pressed, recording
-    try:
-        if key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
-            ctrl_pressed = False
-        elif key == keyboard.Key.space and recording:
+            return False
+    elif e.event_type == "up":
+        if e.name in ("ctrl", "ctrl_l", "ctrl_r"):
+            ctrl_down = False
+        elif e.name == "space" and recording:
+            recording = False
             print("[VTT] Transcribing...", file=sys.stderr)
             text = stop_recording()
             if text:
@@ -92,7 +94,7 @@ def on_release(key):
                 type_text(text)
             else:
                 print("[VTT] No speech detected", file=sys.stderr)
-    except: pass
+            return False
 
 def main():
     print("[VTT] Zek Bridge Voice — Ctrl+Space to talk", file=sys.stderr)
@@ -112,10 +114,13 @@ def main():
         print(json.dumps({"text": text}))
         return
 
-    listener = keyboard.Listener(on_press=on_press, on_release=on_release)
-    listener.start()
+    keyboard.hook(on_event)
     print("[VTT] Ready. Hold Ctrl+Space to speak.", file=sys.stderr)
-    listener.join()
+    print("[VTT] Press Ctrl+C to exit.", file=sys.stderr)
+    try:
+        threading.Event().wait()
+    except KeyboardInterrupt:
+        pass
 
 if __name__ == "__main__":
     main()
