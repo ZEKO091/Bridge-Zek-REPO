@@ -5,6 +5,7 @@ export default function VoiceAgent() {
   const [running, setRunning] = useState(false)
   const [logs, setLogs] = useState<string[]>([])
   const logEnd = useRef<HTMLDivElement>(null)
+  const pollRef = useRef<number>(0)
 
   useEffect(() => {
     const offLog = window.electronAPI.onVoiceLog((msg) => {
@@ -14,7 +15,26 @@ export default function VoiceAgent() {
       setRunning(false)
       setLogs((prev) => [...prev, '[VTT] Agent stopped'])
     })
-    return () => { offLog(); offStop() }
+    // Poll for status/logs (works in browser mode)
+    const poll = async () => {
+      try {
+        const r = await fetch('/api/voice/status')
+        if (r.ok) {
+          const data = await r.json()
+          setRunning(data.running)
+          if (data.logs && data.logs.length > 0) {
+            setLogs((prev) => {
+              const combined = [...prev, ...data.logs]
+              return combined.slice(-50)
+            })
+          }
+        }
+      } catch {}
+    }
+    // Initial status check
+    poll()
+    pollRef.current = window.setInterval(poll, 3000)
+    return () => { offLog(); offStop(); clearInterval(pollRef.current) }
   }, [])
 
   useEffect(() => {
