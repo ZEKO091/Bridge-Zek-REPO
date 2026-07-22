@@ -347,6 +347,23 @@ ipcMain.handle('fs:getInfo', async (_e, itemPath: string) => {
   } catch { return null }
 })
 
+ipcMain.handle('fs:saveTerminalHistory', async (_e, wsPath: string, termId: string, data: string) => {
+  const dir = path.join(wsPath, '.zek-bridge', 'terminals')
+  try { fs.mkdirSync(dir, { recursive: true }) } catch {}
+  try {
+    fs.appendFileSync(path.join(dir, `${termId}.log`), data, 'utf-8')
+    return true
+  } catch { return false }
+})
+
+ipcMain.handle('fs:loadTerminalHistory', async (_e, wsPath: string, termId: string) => {
+  try {
+    const filePath = path.join(wsPath, '.zek-bridge', 'terminals', `${termId}.log`)
+    if (fs.existsSync(filePath)) return fs.readFileSync(filePath, 'utf-8')
+    return null
+  } catch { return null }
+})
+
 ipcMain.handle('fs:writeFile', async (_e, filePath: string, content: string) => {
   try {
     fs.writeFileSync(filePath, content, 'utf-8')

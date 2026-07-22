@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import Workspace from './components/Workspace'
@@ -12,6 +13,7 @@ import AgentsView from './components/AgentsView'
 import MemoryView from './components/MemoryView'
 import { useAppStore } from './store/appStore'
 import { useWorkspaceStore } from './store/workspaceStore'
+import { useTerminalStore } from './store/terminalStore'
 
 function MainView() {
   const view = useAppStore((s) => s.view)
@@ -32,12 +34,30 @@ function MainView() {
 export default function App() {
   const notification = useAppStore((s) => s.notification)
   const current = useWorkspaceStore((s) => s.current)
+  const addTerminal = useTerminalStore((s) => s.addTerminal)
+  const terminals = useTerminalStore((s) => s.terminals)
+
+  // Restore terminals when workspace loads with saved terminalCount
+  useEffect(() => {
+    if (current && terminals.length === 0 && current.terminalCount && current.terminalCount > 0) {
+      const restore = async () => {
+        for (let i = 0; i < (current.terminalCount || 1); i++) {
+          try {
+            const id = await window.electronAPI.createTerminal()
+            addTerminal(id)
+          } catch {}
+        }
+      }
+      restore()
+    }
+  }, [current?.path])
 
   if (!current) {
     return (
       <div className="app-container">
         <CityBackground />
         <div className="app-overlay">
+          <UpdateNotification />
           <TitleBar />
           <MainMenu />
         </div>

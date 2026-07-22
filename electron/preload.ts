@@ -75,4 +75,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readFile: (file: string) => ipcRenderer.invoke('fs:readFile', file),
   writeFile: (file: string, content: string) => ipcRenderer.invoke('fs:writeFile', file, content),
   getFileInfo: (p: string) => ipcRenderer.invoke('fs:getInfo', p),
+  saveTerminalHistory: (wsPath: string, termId: string, data: string) => ipcRenderer.invoke('fs:saveTerminalHistory', wsPath, termId, data),
+  loadTerminalHistory: (wsPath: string, termId: string) => ipcRenderer.invoke('fs:loadTerminalHistory', wsPath, termId),
 })

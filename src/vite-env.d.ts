@@ -37,6 +37,8 @@ interface ElectronAPI {
   readFile: (file: string) => Promise<string | null>
   writeFile: (file: string, content: string) => Promise<boolean>
   getFileInfo: (p: string) => Promise<{ size: number; isDirectory: boolean; modified: number } | null>
+  saveTerminalHistory: (wsPath: string, termId: string, data: string) => Promise<boolean>
+  loadTerminalHistory: (wsPath: string, termId: string) => Promise<string | null>
 }
 
 interface DirEntry { name: string; isDirectory: boolean; isFile: boolean; size: number }

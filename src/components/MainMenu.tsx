@@ -12,7 +12,7 @@ export default function MainMenu() {
   const addTerminal = useTerminalStore((s) => s.addTerminal)
 
   const openWithTerminals = async (path: string, name: string, count: number) => {
-    setWorkspace({ path, name, openedAt: Date.now() })
+    setWorkspace({ path, name, openedAt: Date.now() }, count)
     for (let i = 0; i < count; i++) {
       try {
         const id = await window.electronAPI.createTerminal()
