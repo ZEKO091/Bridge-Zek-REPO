@@ -2,6 +2,13 @@ import http.server, json, os, urllib.parse, socketserver, subprocess, sys, multi
 
 DIST = os.path.join(os.path.dirname(__file__), 'dist')
 VTT_SCRIPT = os.path.join(os.path.dirname(__file__), 'python', 'vtt_agent.py')
+REQUIREMENTS = os.path.join(os.path.dirname(__file__), 'requirements.txt')
+
+def ensure_deps():
+    if not os.path.exists(REQUIREMENTS): return
+    try:
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', REQUIREMENTS], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW)
+    except: pass
 
 voice_process = None
 voice_logs = []
@@ -58,6 +65,7 @@ class ZEKHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({'ok': True, 'msg': 'Already running'}); return
             if not os.path.exists(VTT_SCRIPT):
                 self.send_json({'ok': False, 'msg': 'vtt_agent.py not found'}); return
+            ensure_deps()
             voice_logs = []
             try:
                 voice_process = subprocess.Popen([sys.executable, VTT_SCRIPT], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=subprocess.CREATE_NO_WINDOW)

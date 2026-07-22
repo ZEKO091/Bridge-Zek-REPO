@@ -408,8 +408,13 @@ let voiceProcess: any = null
 ipcMain.handle('voice:start', async () => {
   if (voiceProcess) return true
   const scriptPath = path.join(__dirname, '..', 'python', 'vtt_agent.py')
+  const reqPath = path.join(__dirname, '..', 'requirements.txt')
   if (!fs.existsSync(scriptPath)) return false
   try {
+    // Auto-install Python dependencies
+    if (fs.existsSync(reqPath)) {
+      spawn('python', ['-m', 'pip', 'install', '-r', reqPath], { windowsHide: true, stdio: 'ignore' })
+    }
     voiceProcess = spawn('python', [scriptPath], { windowsHide: true, stdio: 'pipe' })
     voiceProcess.stdout?.on('data', (d: Buffer) => mainWindow?.webContents.send('voice:log', d.toString()))
     voiceProcess.stderr?.on('data', (d: Buffer) => mainWindow?.webContents.send('voice:log', d.toString()))
