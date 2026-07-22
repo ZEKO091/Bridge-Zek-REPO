@@ -18,28 +18,44 @@ interface WorkspaceStore {
 const RECENT_KEY = 'zek-bridge:recent'
 const CURRENT_KEY = 'zek-bridge:current'
 
-function loadRecent(): Workspace[] {
-  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]') } catch { return [] }
+function loadLocal(key: string): any {
+  try { return JSON.parse(localStorage.getItem(key) || 'null') } catch { return null }
 }
-
-function loadCurrent(): Workspace | null {
-  try { return JSON.parse(localStorage.getItem(CURRENT_KEY) || 'null') } catch { return null }
+function saveLocal(key: string, data: any) {
+  try { localStorage.setItem(key, JSON.stringify(data)) } catch {}
 }
 
 export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
-  current: loadCurrent(),
-  recent: loadRecent(),
+  current: loadLocal(CURRENT_KEY),
+  recent: loadLocal(RECENT_KEY) || [],
   lastSaved: Date.now(),
   setWorkspace: (w, termCount) => {
     const data = { ...w, terminalCount: termCount || w.terminalCount || 1 }
-    const recent = loadRecent().filter((r) => r.path !== w.path)
+    const recent = (loadLocal(RECENT_KEY) || []).filter((r: Workspace) => r.path !== w.path)
     recent.unshift(data)
-    localStorage.setItem(RECENT_KEY, JSON.stringify(recent.slice(0, 10)))
-    localStorage.setItem(CURRENT_KEY, JSON.stringify(data))
+    saveLocal(RECENT_KEY, recent.slice(0, 10))
+    saveLocal(CURRENT_KEY, data)
+    // Also save to disk (survives app updates)
+    window.electronAPI.wsSave('current', data)
+    window.electronAPI.wsSave('recent', recent.slice(0, 10))
     set({ current: data, recent, lastSaved: Date.now() })
   },
   closeWorkspace: () => {
     localStorage.removeItem(CURRENT_KEY)
+    window.electronAPI.wsDelete('current')
     set({ current: null, lastSaved: Date.now() })
   },
 }))
+
+// Restore from disk if localStorage was cleared (e.g. after update)
+window.electronAPI.wsLoad('current').then((disk: Workspace | null) => {
+  if (disk && !loadLocal(CURRENT_KEY)) {
+    saveLocal(CURRENT_KEY, disk)
+    const recent = loadLocal(RECENT_KEY) || []
+    if (!recent.find((r: Workspace) => r.path === disk.path)) {
+      recent.unshift(disk)
+      saveLocal(RECENT_KEY, recent.slice(0, 10))
+    }
+    useWorkspaceStore.setState({ current: disk, recent, lastSaved: Date.now() })
+  }
+})

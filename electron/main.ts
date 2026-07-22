@@ -347,6 +347,30 @@ ipcMain.handle('fs:getInfo', async (_e, itemPath: string) => {
   } catch { return null }
 })
 
+// ── Persistent workspace state (survives updates) ──
+const USER_DATA_DIR = path.join(app.getPath('userData'), 'workspaces')
+try { fs.mkdirSync(USER_DATA_DIR, { recursive: true }) } catch {}
+
+ipcMain.handle('ws:save', async (_e, key: string, data: any) => {
+  try {
+    fs.writeFileSync(path.join(USER_DATA_DIR, `${key}.json`), JSON.stringify(data), 'utf-8')
+    return true
+  } catch { return false }
+})
+
+ipcMain.handle('ws:load', async (_e, key: string) => {
+  try {
+    const filePath = path.join(USER_DATA_DIR, `${key}.json`)
+    if (fs.existsSync(filePath)) return JSON.parse(fs.readFileSync(filePath, 'utf-8'))
+    return null
+  } catch { return null }
+})
+
+ipcMain.handle('ws:delete', async (_e, key: string) => {
+  try { fs.unlinkSync(path.join(USER_DATA_DIR, `${key}.json`)); return true }
+  catch { return false }
+})
+
 ipcMain.handle('fs:saveTerminalHistory', async (_e, wsPath: string, termId: string, data: string) => {
   const dir = path.join(wsPath, '.zek-bridge', 'terminals')
   try { fs.mkdirSync(dir, { recursive: true }) } catch {}

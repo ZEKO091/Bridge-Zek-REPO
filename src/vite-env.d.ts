@@ -41,6 +41,9 @@ interface ElectronAPI {
   loadTerminalHistory: (wsPath: string, termId: string) => Promise<string | null>
   voiceStart: () => Promise<boolean>
   voiceStop: () => Promise<boolean>
+  wsSave: (key: string, data: any) => Promise<boolean>
+  wsLoad: (key: string) => Promise<any>
+  wsDelete: (key: string) => Promise<boolean>
   voiceStatus: () => Promise<boolean>
   onVoiceLog: (cb: (msg: string) => void) => () => void
   onVoiceStopped: (cb: () => void) => () => void
