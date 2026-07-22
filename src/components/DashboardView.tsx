@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useSystemStore } from '../store/systemStore'
 import { useTerminalStore } from '../store/terminalStore'
 import { useWorkspaceStore } from '../store/workspaceStore'
@@ -12,8 +13,19 @@ export default function DashboardView() {
   const tools = useSystemStore((s) => s.tools)
   const terminals = useTerminalStore((s) => s.terminals)
   const ws = useWorkspaceStore((s) => s.current)
+  const setWorkspace = useWorkspaceStore((s) => s.setWorkspace)
+
+  const [editing, setEditing] = useState(false)
+  const [newName, setNewName] = useState('')
 
   const installed = tools.filter((t) => t.installed)
+
+  const handleRename = () => {
+    if (newName.trim() && ws) {
+      setWorkspace({ ...ws, name: newName.trim() }, ws.terminalCount)
+    }
+    setEditing(false)
+  }
 
   return (
     <div className="view-container">
@@ -24,7 +36,25 @@ export default function DashboardView() {
         <div className="dash-card"><div className="dash-value">{ramGB.toFixed(1)}GB</div><div className="dash-label">RAM / {ramTotal}GB</div></div>
         <div className="dash-card"><div className="dash-value">{terminals.length}</div><div className="dash-label">Terminals</div></div>
         <div className="dash-card"><div className="dash-value">{installed.length}</div><div className="dash-label">Tools</div></div>
-        <div className="dash-card"><div className="dash-value">{ws?.name || '—'}</div><div className="dash-label">Workspace</div></div>
+        <div className="dash-card" style={{cursor:'pointer'}} onClick={() => { if (ws) { setNewName(ws.name); setEditing(true) } }}>
+          {editing ? (
+            <div style={{display:'flex',gap:4,alignItems:'center',justifyContent:'center'}}>
+              <input
+                autoFocus
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') setEditing(false) }}
+                onBlur={handleRename}
+                style={{width:'100%',padding:'4px 6px',background:'rgba(0,0,0,0.3)',border:'1px solid rgba(0,229,255,0.2)',borderRadius:4,color:'#fff',fontFamily:'Space Grotesk,sans-serif',fontSize:12,textAlign:'center',outline:'none'}}
+              />
+            </div>
+          ) : (
+            <>
+              <div className="dash-value" style={{fontSize:14}}>{ws?.name || '—'}</div>
+              <div className="dash-label">Workspace (click to rename)</div>
+            </>
+          )}
+        </div>
       </div>
       <div className="dash-bar">
         <div className="dash-bar-label">CPU</div>
