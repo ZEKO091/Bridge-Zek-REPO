@@ -13,6 +13,7 @@ export default function TopBar() {
   const setMetrics = useSystemStore((s) => s.setMetrics)
   const notify = useAppStore((s) => s.notify)
   const current = useWorkspaceStore((s) => s.current)
+  const lastSaved = useWorkspaceStore((s) => s.lastSaved)
   const closeWorkspace = useWorkspaceStore((s) => s.closeWorkspace)
 
   const inputRef = useRef<HTMLInputElement>(null)
@@ -60,7 +61,7 @@ export default function TopBar() {
         <div className="top-bar-workspace">
           <span className="top-bar-icon">▦</span>
           <span className="ws-name">{current?.name || 'Bridge Lab'}</span>
-          <span className="ws-badge" title={current?.path}>WS</span>
+          <span className="ws-badge" title={`Auto-saved ${new Date(lastSaved || Date.now()).toLocaleTimeString()}`}>●</span>
           <button className="ws-close" onClick={closeWorkspace} title="Close workspace">✕</button>
         </div>
         <div className="top-bar-model" onClick={() => notify(`GPU: ${gpuName}`)} style={{ cursor: 'pointer' }}>
