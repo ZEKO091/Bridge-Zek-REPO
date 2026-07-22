@@ -91,7 +91,7 @@ export default function MainMenu() {
               <div className="mm-path-row">
                 <span className="mm-path-label">Terminals to open</span>
                 <div className="mm-term-selector">
-                  {[1, 2, 3, 4, 6, 8].map((n) => (
+                  {[1, 2, 3, 4, 6, 8, 10, 12].map((n) => (
                     <button
                       key={n}
                       className={`mm-term-btn ${termCount === n ? 'active' : ''}`}
