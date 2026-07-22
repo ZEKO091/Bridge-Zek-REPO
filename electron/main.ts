@@ -191,6 +191,8 @@ app.whenReady().then(async () => {
   mainWindow?.webContents.send('system:tools', detectedTools)
 
   autoUpdater.checkForUpdates()
+  // Also check periodically while the app is running (every 30 min)
+  setInterval(() => autoUpdater.checkForUpdates(), 30 * 60 * 1000)
 
   autoUpdater.on('checking-for-update', () => {
     mainWindow?.webContents.send('update:status', 'checking')

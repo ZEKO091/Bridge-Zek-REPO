@@ -12,13 +12,14 @@ export default function UpdateNotification() {
   useEffect(() => {
     return window.electronAPI.onUpdateStatus((s) => {
       if (s === 'checking') setState('checking')
-      if (s === 'up-to-date') { setState('up-to-date'); setTimeout(() => setState('idle'), 3000) }
+      if (s === 'up-to-date') { setState('up-to-date'); setTimeout(() => setState('idle'), 1500) }
     })
   }, [])
 
   useEffect(() => {
     return window.electronAPI.onUpdateAvailable((info) => {
       setVersion(info.version)
+      setState('downloading')
     })
   }, [])
 
