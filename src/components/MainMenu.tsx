@@ -5,22 +5,25 @@ import { useTerminalStore } from '../store/terminalStore'
 export default function MainMenu() {
   const [parentDir, setParentDir] = useState('')
   const [projectName, setProjectName] = useState('')
+  const [termCount, setTermCount] = useState(2)
   const recent = useWorkspaceStore((s) => s.recent)
   const setWorkspace = useWorkspaceStore((s) => s.setWorkspace)
   const addTerminal = useTerminalStore((s) => s.addTerminal)
 
-  const openWithTerminal = async (path: string, name: string) => {
+  const openWithTerminals = async (path: string, name: string, count: number) => {
     setWorkspace({ path, name, openedAt: Date.now() })
-    try {
-      const id = await window.electronAPI.createTerminal()
-      addTerminal(id)
-    } catch {}
+    for (let i = 0; i < count; i++) {
+      try {
+        const id = await window.electronAPI.createTerminal()
+        addTerminal(id)
+      } catch {}
+    }
   }
 
   const handleOpen = async () => {
     const folder = await window.electronAPI.openFolderDialog()
     if (folder) {
-      openWithTerminal(folder, folder.split(/[\\/]/).pop() || 'Workspace')
+      openWithTerminals(folder, folder.split(/[\\/]/).pop() || 'Workspace', 1)
     }
   }
 
@@ -33,11 +36,11 @@ export default function MainMenu() {
     const name = projectName.trim()
     if (!name || !parentDir) return
     const fullPath = await window.electronAPI.createFolderAt(parentDir, name)
-    if (fullPath) openWithTerminal(fullPath, name)
+    if (fullPath) openWithTerminals(fullPath, name, termCount)
   }
 
   const handleRecent = (ws: { path: string; name: string }) => {
-    openWithTerminal(ws.path, ws.name)
+    openWithTerminals(ws.path, ws.name, 1)
   }
 
   return (
@@ -85,10 +88,26 @@ export default function MainMenu() {
                 />
               </div>
 
+              <div className="mm-path-row">
+                <span className="mm-path-label">Terminals to open</span>
+                <div className="mm-term-selector">
+                  {[1, 2, 3, 4, 6, 8].map((n) => (
+                    <button
+                      key={n}
+                      className={`mm-term-btn ${termCount === n ? 'active' : ''}`}
+                      onClick={() => setTermCount(n)}
+                    >
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {parentDir && projectName.trim() && (
                 <div className="mm-path-preview">
                   <span className="mm-preview-icon">▦</span>
                   <span className="mm-preview-path">{parentDir}\{projectName.trim()}</span>
+                  <span className="mm-preview-terms">{termCount} terminals</span>
                 </div>
               )}
 
@@ -97,7 +116,7 @@ export default function MainMenu() {
                 disabled={!parentDir || !projectName.trim()}
                 onClick={handleCreate}
               >
-                Create Workspace
+                Create Workspace ({termCount} terminals)
               </button>
             </div>
           </div>

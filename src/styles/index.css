@@ -262,6 +262,11 @@ html, body, #root {
 .mm-path-preview { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 10px; background: rgba(0,229,255,0.04); border: 1px solid rgba(0,229,255,0.1); border-radius: 6px; font-size: 11px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
 .mm-preview-icon { color: var(--glow-cyan); font-size: 12px; }
 .mm-preview-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mm-preview-terms { margin-left: auto; font-size: 9px; color: var(--glow-cyan); background: rgba(0,229,255,0.08); padding: 1px 6px; border-radius: 4px; flex-shrink: 0; }
+.mm-term-selector { display: flex; gap: 6px; flex-wrap: wrap; }
+.mm-term-btn { width: 36px; height: 32px; background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 6px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.mm-term-btn:hover { border-color: rgba(0,229,255,0.2); color: var(--text-secondary); }
+.mm-term-btn.active { background: rgba(0,229,255,0.1); border-color: rgba(0,229,255,0.3); color: var(--glow-cyan); box-shadow: 0 0 8px rgba(0,229,255,0.08); }
 .main-menu-recent { width: 100%; display: flex; flex-direction: column; gap: 8px; }
 .main-menu-recent h3 { font-size: 11px; color: var(--text-muted); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
 .recent-list { display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; }
