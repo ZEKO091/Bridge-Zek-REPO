@@ -4,10 +4,14 @@ import { FitAddon } from 'xterm-addon-fit'
 import { useTerminalStore } from '../store/terminalStore'
 import { useWorkspaceStore } from '../store/workspaceStore'
 
+let fontLoaded = false
+const FONT_FAMILY = "'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace"
+
 export function useTerminal(terminalId: string, containerRef: React.RefObject<HTMLDivElement>) {
   const termRef = useRef<Terminal | null>(null)
   const fitAddonRef = useRef<FitAddon | null>(null)
   const pausedRef = useRef(false)
+  const resizeTimerRef = useRef<number>(0)
   const updateTerminal = useTerminalStore((s) => s.updateTerminal)
   const setCommand = useTerminalStore((s) => s.setCommand)
 
@@ -17,11 +21,15 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
     const term = new Terminal({
       cursorBlink: true,
       cursorStyle: 'bar',
-      fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace",
-      fontSize: 12,
-      lineHeight: 1.3,
+      fontFamily: FONT_FAMILY,
+      fontSize: 13,
+      lineHeight: 1.2,
+      letterSpacing: 0,
       cols: 80,
-      rows: 20,
+      rows: 24,
+      disableStdin: false,
+      allowProposedApi: true,
+      allowTransparency: true,
       theme: {
         background: '#0A0B10', foreground: '#D9E4F2', cursor: '#00E5FF',
         cursorAccent: '#050608', selectionBackground: '#3B82F640',
@@ -31,7 +39,6 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
         brightYellow: '#E0AF68', brightBlue: '#7AA2F7', brightMagenta: '#BB9AF7',
         brightCyan: '#00E5FF', brightWhite: '#D9E4F2',
       },
-      allowTransparency: true,
     })
 
     const fitAddon = new FitAddon()
@@ -39,12 +46,39 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
     fitAddonRef.current = fitAddon
 
     term.open(containerRef.current)
-    const fit = () => { try { fitAddon.fit() } catch {} }
-    setTimeout(fit, 100)
-    setTimeout(fit, 500)
 
-    const handleResize = () => fitAddon.fit()
-    window.addEventListener('resize', handleResize)
+    const doFit = () => {
+      try {
+        fitAddon.fit()
+        const dims = fitAddon.proposeDimensions()
+        if (dims) {
+          window.electronAPI.resizeTerminal(terminalId, dims.cols, dims.rows)
+        }
+      } catch {}
+    }
+
+    // Fit after font loads, then again after paint
+    const fitSequence = () => {
+      doFit()
+      requestAnimationFrame(() => {
+        doFit()
+        requestAnimationFrame(() => doFit())
+      })
+    }
+
+    if (fontLoaded) {
+      fitSequence()
+    } else {
+      // Wait for font to load
+      document.fonts?.ready?.then(fitSequence).catch(fitSequence)
+      fontLoaded = true
+    }
+
+    const debouncedResize = () => {
+      if (resizeTimerRef.current) cancelAnimationFrame(resizeTimerRef.current)
+      resizeTimerRef.current = requestAnimationFrame(() => doFit())
+    }
+    window.addEventListener('resize', debouncedResize)
 
     term.onData((data) => {
       if (!pausedRef.current) window.electronAPI.writeToTerminal(terminalId, data)
@@ -62,8 +96,7 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
           setCommand(terminalId, lastLine)
         }
         if (outputBuffer.length > 2000) {
-          saveBuffer()
-          outputBuffer = ''
+          saveBuffer(); outputBuffer = ''
         }
       }
     })
@@ -71,35 +104,37 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
     const saveBuffer = () => {
       if (!outputBuffer) return
       const ws = useWorkspaceStore.getState().current
-      if (ws?.path) {
-        window.electronAPI.saveTerminalHistory(ws.path, terminalId, outputBuffer)
-      }
+      if (ws?.path) window.electronAPI.saveTerminalHistory(ws.path, terminalId, outputBuffer)
     }
 
-    const autoSave = setInterval(() => {
-      if (!pausedRef.current) saveBuffer()
-    }, 30000)
+    const autoSave = setInterval(() => { if (!pausedRef.current) saveBuffer() }, 30000)
 
     const exitCleanup = window.electronAPI.onTerminalExit(terminalId, () => {
-      saveBuffer()
-      updateTerminal(terminalId, { status: 'stopped' })
+      saveBuffer(); updateTerminal(terminalId, { status: 'stopped' })
     })
 
     updateTerminal(terminalId, { status: 'running' })
-
     termRef.current = term
 
     return () => {
-      clearInterval(autoSave)
-      saveBuffer()
-      dataCleanup()
-      exitCleanup()
+      clearInterval(autoSave); saveBuffer(); dataCleanup(); exitCleanup()
+      if (resizeTimerRef.current) cancelAnimationFrame(resizeTimerRef.current)
+      window.removeEventListener('resize', debouncedResize)
       term.dispose()
-      window.removeEventListener('resize', handleResize)
     }
   }, [terminalId])
 
-  const fitTerminal = useCallback(() => fitAddonRef.current?.fit(), [])
+  const fitTerminal = useCallback(() => {
+    const fit = fitAddonRef.current
+    if (!fit) return
+    try {
+      fit.fit()
+      const dims = fit.proposeDimensions()
+      if (dims) {
+        window.electronAPI.resizeTerminal(terminalId, dims.cols, dims.rows)
+      }
+    } catch {}
+  }, [terminalId])
 
   const togglePause = useCallback(() => {
     pausedRef.current = !pausedRef.current

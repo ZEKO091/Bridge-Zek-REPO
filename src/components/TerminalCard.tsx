@@ -8,7 +8,7 @@ interface TerminalCardProps {
 }
 
 export default function TerminalCard({ terminalId }: TerminalCardProps) {
-  const termRef = useRef<HTMLDivElement>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const { fitTerminal, togglePause, writeToTerminal } = useTerminal(terminalId, containerRef)
   const terminal = useTerminalStore((s) => s.terminals.find((t) => t.id === terminalId))
@@ -24,11 +24,19 @@ export default function TerminalCard({ terminalId }: TerminalCardProps) {
     return () => clearInterval(timer)
   }, [])
 
+  // ResizeObserver with debounce via requestAnimationFrame
   useEffect(() => {
-    if (!termRef.current) return
-    const observer = new ResizeObserver(() => fitTerminal())
-    observer.observe(termRef.current)
-    return () => observer.disconnect()
+    const el = cardRef.current
+    if (!el) return
+    let pending = false
+    const handler = () => {
+      if (pending) return
+      pending = true
+      requestAnimationFrame(() => { fitTerminal(); pending = false })
+    }
+    const obs = new ResizeObserver(handler)
+    obs.observe(el)
+    return () => obs.disconnect()
   }, [fitTerminal])
 
   useEffect(() => {
@@ -48,13 +56,10 @@ export default function TerminalCard({ terminalId }: TerminalCardProps) {
   const handlePause = () => {
     const nowPaused = togglePause()
     setPaused(nowPaused)
-    if (nowPaused) writeToTerminal('\x1b[2K\r⏸ Output paused — click Resume to continue\r\n')
+    if (nowPaused) writeToTerminal('\x1b[2K\rOutput paused — click Resume to continue\r\n')
   }
 
-  const handleClear = () => {
-    writeToTerminal('\x1b[2J\x1b[H')
-  }
-
+  const handleClear = () => writeToTerminal('\x1b[2J\x1b[H')
   const handleRestart = async () => {
     await window.electronAPI.killTerminal(terminalId)
     removeTerminal(terminalId)
@@ -80,36 +85,21 @@ export default function TerminalCard({ terminalId }: TerminalCardProps) {
           </div>
         </div>
         <div className="terminal-card-stats">
-          <div className="stat" title="Terminal ID">
-            <span className="stat-label">PID</span>
-            <span className="stat-value">{terminalId.slice(-4)}</span>
-          </div>
-          <div className="stat" title="Memory usage">
-            <span className="stat-label">RAM</span>
-            <span className="stat-value">{termRAM}MB</span>
-          </div>
-          <div className="stat" title="Running time">
-            <span className="stat-label">Runtime</span>
-            <span className="stat-value">{mins}:{secs.toString().padStart(2, '0')}</span>
-          </div>
-          <div className="stat" title="Commands executed">
-            <span className="stat-label">Tokens</span>
-            <span className="stat-value">{terminal.tokenCount}</span>
-          </div>
+          <div className="stat"><span className="stat-label">PID</span><span className="stat-value">{terminalId.slice(-4)}</span></div>
+          <div className="stat"><span className="stat-label">RAM</span><span className="stat-value">{termRAM}MB</span></div>
+          <div className="stat"><span className="stat-label">Time</span><span className="stat-value">{mins}:{secs.toString().padStart(2, '0')}</span></div>
+          <div className="stat"><span className="stat-label">Logs</span><span className="stat-value">{terminal.tokenCount}</span></div>
         </div>
         <div className="terminal-card-actions">
-          <button className={`term-action-btn ${paused ? 'active' : ''}`} title={paused ? 'Resume output' : 'Pause output'} onClick={handlePause}>
+          <button className={`term-action-btn ${paused ? 'active' : ''}`} title={paused ? 'Resume' : 'Pause'} onClick={handlePause}>
             {paused ? <I.IconPlay size={12} /> : <I.IconPause size={12} />}
           </button>
-          <button className="term-action-btn" title="Clear screen" onClick={handleClear}><I.IconClear size={12} /></button>
-          <button className="term-action-btn" title="Restart terminal" onClick={handleRestart}><I.IconRestart size={12} /></button>
-          <button className="term-action-btn" title="Kill terminal" onClick={() => {
-            window.electronAPI.killTerminal(terminalId)
-            removeTerminal(terminalId)
-          }}><I.IconKill size={12} /></button>
+          <button className="term-action-btn" title="Clear" onClick={handleClear}><I.IconClear size={12} /></button>
+          <button className="term-action-btn" title="Restart" onClick={handleRestart}><I.IconRestart size={12} /></button>
+          <button className="term-action-btn" title="Kill" onClick={() => { window.electronAPI.killTerminal(terminalId); removeTerminal(terminalId) }}><I.IconKill size={12} /></button>
         </div>
       </div>
-      <div className="terminal-card-body" ref={termRef}>
+      <div className="terminal-card-body" ref={cardRef}>
         <div className="terminal-container" ref={containerRef} />
       </div>
       {terminal.runningCommand && (
