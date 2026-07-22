@@ -102,7 +102,7 @@ export default function TopBar() {
           <span className="metric-value">{ramGB.toFixed(1)}GB</span>
           <div className="metric-bar"><div className="metric-fill ram" style={{ width: `${ram}%` }} /></div>
         </div>
-        <div className="top-bar-avatar" onClick={() => notify('ZEK BRIDGE v1.0.17')} title="About" style={{ cursor: 'pointer' }}>ZK</div>
+        <div className="top-bar-avatar" onClick={() => notify('ZEK BRIDGE v1.0.18')} title="About" style={{ cursor: 'pointer' }}>ZK</div>
       </div>
     </div>
   )
@@ -115,6 +115,7 @@ function osType() {
   if (p.includes('Linux')) return 'Linux'
   return p
 }
+
 
 
 
