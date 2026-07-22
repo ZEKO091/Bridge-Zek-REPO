@@ -276,7 +276,11 @@ ipcMain.on('window:maximize', () => {
   if (mainWindow?.isMaximized()) mainWindow.unmaximize()
   else mainWindow?.maximize()
 })
-ipcMain.on('window:close', () => mainWindow?.close())
+ipcMain.on('window:close', () => {
+  terminals.forEach((t: any) => { try { t.kill?.() } catch {} })
+  terminals.clear()
+  app.exit(0)
+})
 
 ipcMain.handle('system:getTools', () => detectedTools)
 
