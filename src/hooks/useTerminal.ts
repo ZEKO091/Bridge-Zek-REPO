@@ -111,7 +111,7 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
     const autoSave = setInterval(() => { if (!pausedRef.current) saveBuffer() }, 30000)
 
     const exitCleanup = window.electronAPI.onTerminalExit(terminalId, () => {
-      saveBuffer(); updateTerminal(terminalId, { status: 'stopped' }); playNotification()
+      saveBuffer(); updateTerminal(terminalId, { status: 'stopped' }); playNotification().catch(() => {})
     })
 
     updateTerminal(terminalId, { status: 'running' })

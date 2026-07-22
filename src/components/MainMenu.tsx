@@ -4,6 +4,7 @@ import { useTerminalStore } from '../store/terminalStore'
 import { useSystemStore } from '../store/systemStore'
 import { useAppStore } from '../store/appStore'
 import * as I from './Icons'
+import { initAudio } from '../lib/sound'
 
 export default function MainMenu() {
   const [showCreate, setShowCreate] = useState(false)
@@ -91,6 +92,7 @@ export default function MainMenu() {
             {cards.map(c => (
               <button key={c.id} className="mm-card" style={{'--card-glow':c.color} as any}
                 onClick={() => {
+                  initAudio()
                   if (c.id === 'open') { setShowOpen(true); setOpenTermCount(2) }
                   if (c.id === 'new') setShowCreate(true)
                   if (c.id === 'terminal') { setShowOpen(true); setOpenTermCount(1) }

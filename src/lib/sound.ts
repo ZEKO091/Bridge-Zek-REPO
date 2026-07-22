@@ -1,28 +1,31 @@
 let audioCtx: AudioContext | null = null
 
-function getCtx(): AudioContext {
+async function ensureCtx(): Promise<AudioContext> {
   if (!audioCtx) audioCtx = new AudioContext()
+  if (audioCtx.state === 'suspended') await audioCtx.resume()
   return audioCtx
 }
 
-export function playNotification() {
-  try {
-    const ctx = getCtx()
-    const now = ctx.currentTime
+// Init AudioContext on first user interaction (browser policy)
+export function initAudio() {
+  if (audioCtx) return
+  audioCtx = new AudioContext()
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {})
+}
 
-    // Two-tone chime
+export async function playNotification() {
+  try {
+    const ctx = await ensureCtx()
+    const now = ctx.currentTime
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.connect(gain)
     gain.connect(ctx.destination)
-
     osc.type = 'sine'
-    osc.frequency.setValueAtTime(880, now)       // A5
-    osc.frequency.setValueAtTime(1108.73, now + 0.15) // C#6
-
+    osc.frequency.setValueAtTime(880, now)
+    osc.frequency.setValueAtTime(1108.73, now + 0.15)
     gain.gain.setValueAtTime(0.15, now)
     gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3)
-
     osc.start(now)
     osc.stop(now + 0.3)
   } catch {}
