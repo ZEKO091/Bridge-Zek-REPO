@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import { useTerminalStore } from '../store/terminalStore'
+import * as I from './Icons'
 
 export default function MainMenu() {
   const [parentDir, setParentDir] = useState('')
@@ -55,13 +56,13 @@ export default function MainMenu() {
 
           <div className="main-menu-actions">
             <div className="main-menu-card" onClick={handleOpen}>
-              <span className="mm-icon">🗁</span>
+              <I.IconFolderOpen size={24} className="mm-icon" />
               <span className="mm-title">Open Workspace</span>
               <span className="mm-desc">Select an existing project folder</span>
             </div>
 
             <div className="main-menu-card">
-              <span className="mm-icon">+</span>
+              <I.IconPlus size={24} className="mm-icon" />
               <span className="mm-title">Create New Workspace</span>
 
               <div className="mm-path-row">
@@ -105,7 +106,7 @@ export default function MainMenu() {
 
               {parentDir && projectName.trim() && (
                 <div className="mm-path-preview">
-                  <span className="mm-preview-icon">▦</span>
+                  <I.IconWorkspaces size={14} className="mm-preview-icon" />
                   <span className="mm-preview-path">{parentDir}\{projectName.trim()}</span>
                   <span className="mm-preview-terms">{termCount} terminals</span>
                 </div>
@@ -127,7 +128,7 @@ export default function MainMenu() {
               <div className="recent-list">
                 {recent.map((ws) => (
                   <button key={ws.path} className="recent-item" onClick={() => handleRecent(ws)}>
-                    <span className="recent-icon">▦</span>
+                    <I.IconWorkspaces size={16} className="recent-icon" />
                     <div className="recent-info">
                       <span className="recent-name">{ws.name}</span>
                       <span className="recent-path">{ws.path}</span>

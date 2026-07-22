@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useWorkspaceStore } from '../store/workspaceStore'
+import * as I from './Icons'
 
 interface DirEntry {
   name: string; isDirectory: boolean; isFile: boolean; size: number
@@ -75,8 +76,8 @@ export default function FileExplorer() {
     <div className="fe-container">
       <div className="fe-header">
         <div className="fe-path-row">
-          <button className="fe-nav-btn" onClick={goBack} disabled={history.length === 0} title="Back">←</button>
-          <button className="fe-nav-btn" onClick={goUp} title="Up">↑</button>
+          <button className="fe-nav-btn" onClick={goBack} disabled={history.length === 0} title="Back"><I.IconBack size={14} /></button>
+          <button className="fe-nav-btn" onClick={goUp} title="Up"><I.IconUp size={14} /></button>
           <span className="fe-path">{currentDir || 'No directory'}</span>
         </div>
       </div>

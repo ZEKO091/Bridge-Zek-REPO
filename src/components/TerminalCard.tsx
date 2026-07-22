@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTerminal } from '../hooks/useTerminal'
 import { useTerminalStore } from '../store/terminalStore'
+import * as I from './Icons'
 
 interface TerminalCardProps {
   terminalId: string
@@ -98,14 +99,14 @@ export default function TerminalCard({ terminalId }: TerminalCardProps) {
         </div>
         <div className="terminal-card-actions">
           <button className={`term-action-btn ${paused ? 'active' : ''}`} title={paused ? 'Resume output' : 'Pause output'} onClick={handlePause}>
-            {paused ? '▶' : '⏸'}
+            {paused ? <I.IconPlay size={12} /> : <I.IconPause size={12} />}
           </button>
-          <button className="term-action-btn" title="Clear screen" onClick={handleClear}>⊡</button>
-          <button className="term-action-btn" title="Restart terminal" onClick={handleRestart}>⟳</button>
+          <button className="term-action-btn" title="Clear screen" onClick={handleClear}><I.IconClear size={12} /></button>
+          <button className="term-action-btn" title="Restart terminal" onClick={handleRestart}><I.IconRestart size={12} /></button>
           <button className="term-action-btn" title="Kill terminal" onClick={() => {
             window.electronAPI.killTerminal(terminalId)
             removeTerminal(terminalId)
-          }}>⏹</button>
+          }}><I.IconKill size={12} /></button>
         </div>
       </div>
       <div className="terminal-card-body" ref={termRef}>

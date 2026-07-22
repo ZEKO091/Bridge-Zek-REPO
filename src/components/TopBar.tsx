@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useSystemStore } from '../store/systemStore'
 import { useAppStore } from '../store/appStore'
 import { useWorkspaceStore } from '../store/workspaceStore'
+import * as I from './Icons'
 
 export default function TopBar() {
   const cpu = useSystemStore((s) => s.cpu)
@@ -59,7 +60,7 @@ export default function TopBar() {
     <div className="top-bar">
       <div className="top-bar-left">
         <div className="top-bar-workspace">
-          <span className="top-bar-icon">▦</span>
+          <I.IconWorkspaces size={16}/>
           <span className="ws-name">{current?.name || 'Bridge Lab'}</span>
           <span className="ws-badge" title={`Auto-saved ${new Date(lastSaved || Date.now()).toLocaleTimeString()}`}>●</span>
           <button className="ws-close" onClick={closeWorkspace} title="Close workspace">✕</button>
@@ -72,7 +73,7 @@ export default function TopBar() {
       </div>
       <div className="top-bar-center">
         <div className="search-bar">
-          <span className="search-icon">⌕</span>
+          <I.IconSearch size={14} className="search-icon" />
           <input
             ref={inputRef}
             type="text"

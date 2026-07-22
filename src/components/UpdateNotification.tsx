@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import * as I from './Icons'
 
 type UpdateState = 'idle' | 'checking' | 'downloading' | 'downloaded' | 'up-to-date' | 'error'
 
@@ -55,16 +56,16 @@ export default function UpdateNotification() {
         {state === 'downloading' && <><span className="update-spinner" /> Updating to v{version}... {progress}%</>}
         {state === 'downloaded' && (
           <>
-            <span className="update-icon">⬇</span>
+            <I.IconUpdate size={14} className="update-icon" />
             <span>Update v{version} ready</span>
             <button className="update-btn" onClick={handleInstall}>Restart & Update</button>
             <button className="update-btn dismiss" onClick={() => setState('idle')}>Later</button>
           </>
         )}
-        {state === 'up-to-date' && <><span className="update-icon">✓</span> ZEK BRIDGE is up to date</>}
+        {state === 'up-to-date' && <><I.IconCheck size={14} className="update-icon" /> ZEK BRIDGE is up to date</>}
         {state === 'error' && (
           <>
-            <span className="update-icon error">✕</span>
+            <I.IconClose size={14} className="update-icon error" />
             <span>{error.slice(0, 60)}</span>
             <button className="update-btn" onClick={handleRetry}>Retry</button>
             <button className="update-btn dismiss" onClick={() => setState('idle')}>Dismiss</button>

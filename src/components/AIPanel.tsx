@@ -1,5 +1,6 @@
 import DetectedTools from './DetectedTools'
 import { useTerminalStore } from '../store/terminalStore'
+import * as I from './Icons'
 
 const quickCmds = ['node --version', 'npm start', 'python --version', 'dir', 'cd ~', 'ipconfig', 'systeminfo', 'whoami']
 
@@ -31,7 +32,7 @@ export default function AIPanel() {
         </div>
         <div className="ai-section">
           <div className="ai-section-title">
-            <span className="ai-section-icon">⌘</span>
+            <I.IconTerminal size={14} className="ai-section-icon" />
             <span>Quick Launch</span>
           </div>
           <div className="ai-suggestions">
@@ -64,9 +65,9 @@ export default function AIPanel() {
         </div>
         <div className="ai-section">
           <div className="ai-section-title" style={{ cursor: 'pointer' }} onClick={() => runCommand('help')}>
-            <span className="ai-section-icon">⟳</span>
+            <I.IconRestart size={14} className="ai-section-icon" />
             <span>Run Command</span>
-            <span className="ai-section-icon" style={{ marginLeft: 'auto', fontSize: '10px' }}>▶</span>
+            <I.IconArrow size={12} style={{ marginLeft: 'auto' }} />
           </div>
           <div className="ai-queue-empty">Use Quick Launch or Ctrl+K search bar</div>
         </div>

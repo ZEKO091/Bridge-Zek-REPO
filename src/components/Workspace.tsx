@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import TerminalCard from './TerminalCard'
 import { useTerminalStore } from '../store/terminalStore'
+import * as I from './Icons'
 
 export default function Workspace() {
   const terminals = useTerminalStore((s) => s.terminals)
@@ -19,7 +20,7 @@ export default function Workspace() {
     <div className="workspace">
       <div className="workspace-header">
         <div className="workspace-title">
-          <span className="workspace-icon">〉</span>
+          <I.IconTerminal size={20} className="workspace-icon" />
           <h2>Bridge Lab</h2>
           <span className="workspace-badge">{terminals.length} active</span>
         </div>
