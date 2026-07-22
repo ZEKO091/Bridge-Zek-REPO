@@ -1,5 +1,4 @@
 import DetectedTools from './DetectedTools'
-import VoiceAgent from './VoiceAgent'
 import { useTerminalStore } from '../store/terminalStore'
 import * as I from './Icons'
 
@@ -44,7 +43,6 @@ export default function AIPanel() {
             ))}
           </div>
         </div>
-        <VoiceAgent />
         <div className="ai-section">
           <div className="ai-section-title">
             <I.IconModel size={14} className="ai-section-icon" />

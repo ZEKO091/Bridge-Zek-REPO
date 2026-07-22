@@ -1,17 +1,6 @@
-import http.server, json, os, urllib.parse, socketserver, subprocess, sys, multiprocessing, threading, signal
+import http.server, json, os, urllib.parse, socketserver, subprocess, sys, multiprocessing
 
 DIST = os.path.join(os.path.dirname(__file__), 'dist')
-VTT_SCRIPT = os.path.join(os.path.dirname(__file__), 'python', 'vtt_agent.py')
-REQUIREMENTS = os.path.join(os.path.dirname(__file__), 'requirements.txt')
-
-def ensure_deps():
-    if not os.path.exists(REQUIREMENTS): return
-    try:
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-r', REQUIREMENTS], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW)
-    except: pass
-
-voice_process = None
-voice_logs = []
 
 def get_cpu():
     try:
@@ -54,46 +43,10 @@ class ZEKHandler(http.server.SimpleHTTPRequestHandler):
         return os.path.join(DIST, path.lstrip('/')) if not path.startswith('/api/') else path
 
     def do_GET(self):
-        global voice_process, voice_logs
         if self.path == '/api/metrics':
             cpu = get_cpu(); ram = get_ram(); gpu = get_gpu()
             self.send_json({'cpu': cpu, 'ram': ram['ram'], 'ramGB': ram['ramGB'], 'ramTotal': ram['ramTotal'], 'gpu': gpu['gpu'], 'gpuName': gpu['gpuName'], 'procRAM': 0, 'cores': multiprocessing.cpu_count()})
             return
-
-        if self.path == '/api/voice/start':
-            if voice_process and voice_process.poll() is None:
-                self.send_json({'ok': True, 'msg': 'Already running'}); return
-            if not os.path.exists(VTT_SCRIPT):
-                self.send_json({'ok': False, 'msg': 'vtt_agent.py not found'}); return
-            ensure_deps()
-            voice_logs = []
-            try:
-                voice_process = subprocess.Popen([sys.executable, VTT_SCRIPT], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
-                def reader():
-                    for line in voice_process.stdout:
-                        voice_logs.append(line.rstrip())
-                threading.Thread(target=reader, daemon=True).start()
-                self.send_json({'ok': True, 'msg': 'Voice agent started'})
-            except Exception as e:
-                self.send_json({'ok': False, 'msg': str(e)})
-            return
-
-        if self.path == '/api/voice/stop':
-            if voice_process and voice_process.poll() is None:
-                voice_process.terminate()
-                try: voice_process.wait(timeout=3)
-                except: voice_process.kill()
-                voice_process = None
-                self.send_json({'ok': True, 'msg': 'Stopped'})
-            else:
-                self.send_json({'ok': True, 'msg': 'Not running'})
-            return
-
-        if self.path == '/api/voice/status':
-            running = voice_process is not None and voice_process.poll() is None
-            self.send_json({'running': running, 'logs': voice_logs[-20:] if voice_logs else []})
-            return
-
         return super().do_GET()
 
     def send_json(self, data, status=200):
