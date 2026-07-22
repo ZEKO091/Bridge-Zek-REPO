@@ -7,12 +7,29 @@ import TitleBar from './components/TitleBar'
 import UpdateNotification from './components/UpdateNotification'
 import MainMenu from './components/MainMenu'
 import FileExplorer from './components/FileExplorer'
+import DashboardView from './components/DashboardView'
+import AgentsView from './components/AgentsView'
 import { useAppStore } from './store/appStore'
 import { useWorkspaceStore } from './store/workspaceStore'
 
+function MainView() {
+  const view = useAppStore((s) => s.view)
+  switch (view) {
+    case 'files': return <FileExplorer />
+    case 'dashboard': return <DashboardView />
+    case 'agents': return <AgentsView />
+    case 'models':
+    case 'memory':
+    case 'analytics':
+    case 'settings':
+    case 'git':
+    case 'workspaces':
+    default: return <Workspace />
+  }
+}
+
 export default function App() {
   const notification = useAppStore((s) => s.notification)
-  const view = useAppStore((s) => s.view)
   const current = useWorkspaceStore((s) => s.current)
 
   if (!current) {
@@ -36,7 +53,7 @@ export default function App() {
         <TopBar />
         <div className="app-body">
           <Sidebar />
-          {view === 'files' ? <FileExplorer /> : <Workspace />}
+          <MainView />
           <AIPanel />
         </div>
         {notification && <div className="toast-notification">{notification}</div>}
