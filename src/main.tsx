@@ -3,7 +3,28 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './styles/index.css'
 
-const termDataCallbacks: Map<string, (data: string) => void> = new Map()
+function browserFolderPicker(): Promise<string | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.setAttribute('webkitdirectory', '')
+    input.setAttribute('directory', '')
+    input.style.display = 'none'
+    input.addEventListener('change', () => {
+      const path = (input as any).files?.[0]?.path
+      if (path) {
+        resolve(path.replace(/[^\\/]+$/, '').replace(/\\$/, ''))
+      } else {
+        resolve(input.value ? input.value.split('\\').slice(0, -1).join('\\').replace(/\\$/,'') || null : null)
+      }
+      input.remove()
+    })
+    input.addEventListener('cancel', () => { resolve(null); input.remove() })
+    document.body.appendChild(input)
+    input.click()
+  })
+}
+
 const termCbs: Map<string, { data: (d: string) => void; exit: () => void; stats: (s: { ram: number }) => void }> = new Map()
 
 if (!window.electronAPI) {
@@ -38,10 +59,10 @@ if (!window.electronAPI) {
       { name: 'Git', version: '2.45.0', path: '', installed: true },
     ],
     runShell: async () => 'ok',
-    openFolderDialog: async () => { const p = prompt('Enter workspace path:'); return p || null },
-    createFolderDialog: async (name) => { const p = prompt(`Parent folder for "${name}":`); return p ? `${p}\\${name}` : null },
-    pickParentFolder: async () => { const p = prompt('Select parent directory:'); return p || null },
-    createFolderAt: async (parent, name) => { return `${parent}\\${name}` },
+    openFolderDialog: async () => browserFolderPicker(),
+    createFolderDialog: async (name) => { const p = await browserFolderPicker(); return p ? `${p}\\${name}` : null },
+    pickParentFolder: async () => browserFolderPicker(),
+    createFolderAt: async (parent, name) => `${parent}\\${name}`,
     checkUpdate: async () => {},
     downloadUpdate: async () => {},
     installUpdate: async () => {},
