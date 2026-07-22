@@ -1,5 +1,5 @@
 import DetectedTools from './DetectedTools'
-import { useTerminalStore } from '../store/terminalStore'
+import { useTerminalStore, canAddTerminal, notifyMaxTerminals } from '../store/terminalStore'
 import * as I from './Icons'
 
 const quickCmds = ['node --version', 'npm start', 'python --version', 'dir', 'cd ~', 'ipconfig', 'systeminfo', 'whoami']
@@ -8,6 +8,7 @@ export default function AIPanel() {
   const addTerminal = useTerminalStore((s) => s.addTerminal)
 
   const runCommand = async (cmd: string) => {
+    if (!canAddTerminal()) { notifyMaxTerminals(); return }
     try {
       const id = await window.electronAPI.createTerminal()
       addTerminal(id)

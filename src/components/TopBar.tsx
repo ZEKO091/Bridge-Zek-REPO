@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSystemStore } from '../store/systemStore'
 import { useAppStore } from '../store/appStore'
+import { useTerminalStore, canAddTerminal, notifyMaxTerminals, MAX_TERMINALS } from '../store/terminalStore'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import * as I from './Icons'
 
@@ -48,9 +49,9 @@ export default function TopBar() {
     }
 
     try {
+      if (!canAddTerminal()) { notifyMaxTerminals(); return }
       const id = await window.electronAPI.createTerminal()
       await window.electronAPI.writeToTerminal(id, `${trimmed}\r`)
-      const { useTerminalStore } = await import('../store/terminalStore')
       useTerminalStore.getState().addTerminal(id)
       setQuery(''); inputRef.current?.blur()
     } catch {}

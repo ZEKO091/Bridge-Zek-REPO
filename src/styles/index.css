@@ -60,6 +60,8 @@ html,body,#root{width:100%;height:100%;overflow:hidden;font-family:'Space Grotes
 .workspace-badge{padding:2px 8px;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.2);border-radius:10px;font-size:10px;color:var(--glow-cyan);font-family:'JetBrains Mono',monospace}
 .new-terminal-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;background:linear-gradient(135deg,rgba(0,229,255,0.12),rgba(124,58,237,0.12));border:1px solid rgba(0,229,255,0.2);border-radius:8px;color:var(--glow-cyan);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s}
 .new-terminal-btn:hover{background:linear-gradient(135deg,rgba(0,229,255,0.2),rgba(124,58,237,0.2));box-shadow:0 0 20px rgba(0,229,255,0.1);border-color:rgba(0,229,255,0.4)}
+.new-terminal-btn:disabled{opacity:0.35;cursor:not-allowed;pointer-events:auto}
+.new-terminal-btn:disabled:hover{background:linear-gradient(135deg,rgba(0,229,255,0.12),rgba(124,58,237,0.12));box-shadow:none;border-color:rgba(0,229,255,0.2)}
 .workspace-grid{flex:1;overflow-y:auto;padding:0 16px 16px;align-content:start}
 .workspace-grid::-webkit-scrollbar{width:6px}
 .workspace-grid::-webkit-scrollbar-track{background:transparent}

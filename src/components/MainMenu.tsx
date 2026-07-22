@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useWorkspaceStore } from '../store/workspaceStore'
-import { useTerminalStore } from '../store/terminalStore'
+import { useTerminalStore, MAX_TERMINALS, canAddTerminal, notifyMaxTerminals } from '../store/terminalStore'
 import { useSystemStore } from '../store/systemStore'
 import { useAppStore } from '../store/appStore'
 import * as I from './Icons'
@@ -31,10 +31,12 @@ export default function MainMenu() {
   }, [])
 
   const openWS = async (path: string, name: string, count = 2) => {
-    const capped = Math.min(count, 12)
+    const capped = Math.min(count, MAX_TERMINALS)
+    if (!canAddTerminal()) { notifyMaxTerminals(); return }
     setWorkspace({ path, name, openedAt: Date.now() }, capped)
     closeMenu()
     for (let i = 0; i < capped; i++) {
+      if (!canAddTerminal()) break
       try { const id = await window.electronAPI.createTerminal(); addTerminal(id) } catch {}
     }
   }

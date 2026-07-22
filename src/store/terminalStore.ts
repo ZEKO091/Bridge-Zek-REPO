@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 
+export const MAX_TERMINALS = 12
+
 export interface TerminalInstance {
   id: string
   name: string
@@ -14,15 +16,17 @@ export interface TerminalInstance {
 
 interface TerminalStore {
   terminals: TerminalInstance[]
-  addTerminal: (id: string) => void
+  addTerminal: (id: string) => boolean
   removeTerminal: (id: string) => void
   updateTerminal: (id: string, updates: Partial<TerminalInstance>) => void
   setCommand: (id: string, cmd: string) => void
 }
 
-export const useTerminalStore = create<TerminalStore>((set) => ({
+export const useTerminalStore = create<TerminalStore>((set, get) => ({
   terminals: [],
-  addTerminal: (id) =>
+  addTerminal: (id) => {
+    const state = get()
+    if (state.terminals.length >= MAX_TERMINALS) return false
     set((state) => ({
       terminals: [
         ...state.terminals,
@@ -38,7 +42,9 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
           createdAt: Date.now(),
         },
       ],
-    })),
+    }))
+    return true
+  },
   removeTerminal: (id) =>
     set((state) => ({
       terminals: state.terminals.filter((t) => t.id !== id),
@@ -56,3 +62,14 @@ export const useTerminalStore = create<TerminalStore>((set) => ({
       ),
     })),
 }))
+
+export function canAddTerminal(): boolean {
+  return useTerminalStore.getState().terminals.length < MAX_TERMINALS
+}
+
+export const MAX_ERROR = `Maximum number of active agents reached (${MAX_TERMINALS}). Close an existing agent before creating a new one.`
+
+export function notifyMaxTerminals() {
+  const { useAppStore } = require('./appStore')
+  useAppStore.getState().notify(MAX_ERROR)
+}

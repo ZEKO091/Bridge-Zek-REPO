@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import TerminalCard from './TerminalCard'
-import { useTerminalStore } from '../store/terminalStore'
+import { useTerminalStore, MAX_TERMINALS, canAddTerminal, notifyMaxTerminals } from '../store/terminalStore'
 import * as I from './Icons'
 
 function getCols(count: number): number {
@@ -15,12 +15,12 @@ export default function Workspace() {
   const addTerminal = useTerminalStore((s) => s.addTerminal)
 
   const handleNewTerminal = useCallback(async () => {
-    if (terminals.length >= 12) return
+    if (!canAddTerminal()) { notifyMaxTerminals(); return }
     try {
       const id = await window.electronAPI.createTerminal()
       addTerminal(id)
     } catch {}
-  }, [addTerminal, terminals.length])
+  }, [addTerminal])
 
   const cols = useMemo(() => getCols(terminals.length), [terminals.length])
   const rows = terminals.length > 0 ? Math.ceil(terminals.length / cols) : 1

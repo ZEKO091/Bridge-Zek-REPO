@@ -12,7 +12,7 @@ import AgentsView from './components/AgentsView'
 import MemoryView from './components/MemoryView'
 import { useAppStore } from './store/appStore'
 import { useWorkspaceStore } from './store/workspaceStore'
-import { useTerminalStore } from './store/terminalStore'
+import { useTerminalStore, canAddTerminal } from './store/terminalStore'
 
 const BG = { backgroundImage: 'url(/bg.png)', backgroundSize: 'cover' as const, backgroundPosition: 'center' as const, position: 'fixed' as const, top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }
 
@@ -37,7 +37,8 @@ export default function App() {
   useEffect(() => {
     if (!menuOpen && current && terminals.length === 0 && current.terminalCount && current.terminalCount > 0) {
       const restore = async () => {
-        for (let i = 0; i < (current.terminalCount || 1); i++) {
+        for (let i = 0; i < Math.min(current.terminalCount || 1, 12); i++) {
+          if (!canAddTerminal()) break
           try { const id = await window.electronAPI.createTerminal(); addTerminal(id) } catch {}
         }
       }
