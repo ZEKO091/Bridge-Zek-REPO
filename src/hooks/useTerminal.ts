@@ -109,8 +109,11 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
       // Ctrl+C → only copy if selection exists, otherwise do nothing
       if (ctrl && !shift && e.key === 'c') {
         const sel = term.getSelection()
-        if (sel) { navigator.clipboard.writeText(sel).catch(() => {}); term.clearSelection(); return false }
-        return false // block Ctrl+C when no selection
+        if (sel) {
+          navigator.clipboard.writeText(sel).catch(() => {})
+          requestAnimationFrame(() => term.clearSelection())
+        }
+        return false
       }
       // Ctrl+V → paste
       if (ctrl && !shift && e.key === 'v') {
