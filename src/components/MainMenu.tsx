@@ -30,10 +30,10 @@ export default function MainMenu() {
   }, [])
 
   const openWS = async (path: string, name: string, count = 2) => {
-    setWorkspace({ path, name, openedAt: Date.now() }, count)
+    const capped = Math.min(count, 12)
+    setWorkspace({ path, name, openedAt: Date.now() }, capped)
     closeMenu()
-    // Create terminals directly
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < capped; i++) {
       try { const id = await window.electronAPI.createTerminal(); addTerminal(id) } catch {}
     }
   }
@@ -172,8 +172,9 @@ export default function MainMenu() {
               <label>Terminals</label>
               <div className="mm-term-selector" style={{marginTop:4}}>
                 {[1,2,3,4,6,8,10,12].map(n =>
-                  <button key={n} className={`mm-term-btn ${termCount===n?'active':''}`} onClick={() => setTermCount(n)}>{n}</button>
+                  <button key={n} className={`mm-term-btn ${termCount===n?'active':''}`} onClick={() => setTermCount(Math.min(n,12))}>{n}</button>
                 )}
+                {termCount > 12 && <span style={{fontSize:10,color:'#EF4444'}}>Max 12</span>}
               </div>
             </div>
             <div className="mm-modal-actions">

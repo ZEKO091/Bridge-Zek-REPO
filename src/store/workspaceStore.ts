@@ -30,7 +30,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
   recent: loadLocal(RECENT_KEY) || [],
   lastSaved: Date.now(),
   setWorkspace: (w, termCount) => {
-    const data = { ...w, terminalCount: termCount || w.terminalCount || 1 }
+    const data = { ...w, terminalCount: Math.min(termCount || w.terminalCount || 1, 12) }
     const recent = (loadLocal(RECENT_KEY) || []).filter((r: Workspace) => r.path !== w.path)
     recent.unshift(data)
     saveLocal(RECENT_KEY, recent.slice(0, 10))
