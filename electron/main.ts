@@ -196,7 +196,12 @@ app.whenReady().then(async () => {
   })
 
   autoUpdater.on('error', (err) => {
-    mainWindow?.webContents.send('update:error', err.message)
+    const msg = err?.message || ''
+    if (msg.includes('No versions') || msg.includes('no versions') || msg.includes('404')) {
+      mainWindow?.webContents.send('update:status', 'up-to-date')
+    } else {
+      mainWindow?.webContents.send('update:error', msg)
+    }
   })
 
   pollCPU()
