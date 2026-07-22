@@ -78,7 +78,6 @@ export default function MainMenu() {
 
         <div className="mm-center">
           <div className="mm-logo">
-            <img src="/logo.png" alt="ZEK BRIDGE" style={{width:80,height:80,borderRadius:16,marginBottom:8,objectFit:'cover'}} />
             <div className="mm-logo-text">ZEK</div>
             <div className="mm-logo-sub">BRIDGE</div>
             <div className="mm-status">
