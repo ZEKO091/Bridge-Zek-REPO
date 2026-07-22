@@ -5,8 +5,7 @@ import { useTerminalStore } from '../store/terminalStore'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import { playNotification } from '../lib/sound'
 
-let fontLoaded = false
-const FONT_FAMILY = "'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace"
+const FONT = "'Cascadia Code', 'JetBrains Mono', 'Consolas', 'Fira Code', monospace"
 
 export function useTerminal(terminalId: string, containerRef: React.RefObject<HTMLDivElement>) {
   const termRef = useRef<Terminal | null>(null)
@@ -22,23 +21,38 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
     const term = new Terminal({
       cursorBlink: true,
       cursorStyle: 'bar',
-      fontFamily: FONT_FAMILY,
       fontSize: 13,
-      lineHeight: 1.2,
+      fontFamily: FONT,
+      lineHeight: 1.0,
       letterSpacing: 0,
       cols: 80,
       rows: 24,
       disableStdin: false,
       allowProposedApi: true,
       allowTransparency: true,
+      minimumContrastRatio: 1,
       theme: {
-        background: '#0A0B10', foreground: '#D9E4F2', cursor: '#00E5FF',
-        cursorAccent: '#050608', selectionBackground: '#3B82F640',
-        black: '#1A1B26', red: '#F7768E', green: '#9ECE6A', yellow: '#E0AF68',
-        blue: '#7AA2F7', magenta: '#BB9AF7', cyan: '#00E5FF', white: '#D9E4F2',
-        brightBlack: '#414868', brightRed: '#F7768E', brightGreen: '#9ECE6A',
-        brightYellow: '#E0AF68', brightBlue: '#7AA2F7', brightMagenta: '#BB9AF7',
-        brightCyan: '#00E5FF', brightWhite: '#D9E4F2',
+        background: '#0A0B10',
+        foreground: '#D9E4F2',
+        cursor: '#00E5FF',
+        cursorAccent: '#050608',
+        selectionBackground: '#3B82F640',
+        black: '#1A1B26',
+        red: '#F7768E',
+        green: '#9ECE6A',
+        yellow: '#E0AF68',
+        blue: '#7AA2F7',
+        magenta: '#BB9AF7',
+        cyan: '#00E5FF',
+        white: '#D9E4F2',
+        brightBlack: '#414868',
+        brightRed: '#F7768E',
+        brightGreen: '#9ECE6A',
+        brightYellow: '#E0AF68',
+        brightBlue: '#7AA2F7',
+        brightMagenta: '#BB9AF7',
+        brightCyan: '#00E5FF',
+        brightWhite: '#D9E4F2',
       },
     })
 
@@ -58,7 +72,6 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
       } catch {}
     }
 
-    // Fit after font loads, then again after paint
     const fitSequence = () => {
       doFit()
       requestAnimationFrame(() => {
@@ -67,13 +80,7 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
       })
     }
 
-    if (fontLoaded) {
-      fitSequence()
-    } else {
-      // Wait for font to load
-      document.fonts?.ready?.then(fitSequence).catch(fitSequence)
-      fontLoaded = true
-    }
+    document.fonts?.ready?.then(fitSequence).catch(fitSequence)
 
     const debouncedResize = () => {
       if (resizeTimerRef.current) cancelAnimationFrame(resizeTimerRef.current)
@@ -131,9 +138,7 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
     try {
       fit.fit()
       const dims = fit.proposeDimensions()
-      if (dims) {
-        window.electronAPI.resizeTerminal(terminalId, dims.cols, dims.rows)
-      }
+      if (dims) window.electronAPI.resizeTerminal(terminalId, dims.cols, dims.rows)
     } catch {}
   }, [terminalId])
 
@@ -148,11 +153,7 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
 
   const clearTerminal = useCallback(() => {
     const term = termRef.current
-    if (term) {
-      term.clear()
-      term.write('\x1b[H')
-      term.focus()
-    }
+    if (term) { term.clear(); term.write('\x1b[H'); term.focus() }
   }, [])
 
   return { fitTerminal, togglePause, writeToTerminal, clearTerminal }

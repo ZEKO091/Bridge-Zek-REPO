@@ -93,8 +93,8 @@ html,body,#root{width:100%;height:100%;overflow:hidden;font-family:'Space Grotes
 .term-action-btn{width:24px;height:24px;background:none;border:1px solid var(--glass-border);border-radius:5px;color:var(--text-muted);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
 .term-action-btn:hover{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.12);color:var(--text-primary)}
 .term-action-btn.active{background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.3);color:#F59E0B}
-.terminal-card-body{flex:1;position:relative;min-height:0;overflow:hidden;display:flex;align-items:stretch;min-height:120px}
-.terminal-container{position:absolute;inset:0;display:flex;align-items:stretch;justify-content:stretch;overflow:hidden;padding:0}
+.terminal-card-body{flex:1;position:relative;min-height:0;overflow:hidden;min-height:120px}
+.terminal-container{position:absolute;inset:0;overflow:hidden;padding:0}
 .terminal-container .xterm{height:100%!important;width:100%!important}
 .terminal-container .xterm-viewport{scrollbar-width:thin;overflow-y:auto!important}
 .terminal-container .xterm-viewport::-webkit-scrollbar{width:6px}
@@ -103,6 +103,8 @@ html,body,#root{width:100%;height:100%;overflow:hidden;font-family:'Space Grotes
 .terminal-container .xterm-viewport::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.15)}
 .terminal-container .xterm-screen{width:100%!important;height:100%!important}
 .terminal-container .xterm-rows{width:100%!important}
+.terminal-container .xterm-rows>div{line-height:1.0!important;letter-spacing:0!important;transform:none!important}
+.terminal-container canvas{transform:none!important;image-rendering:pixelated}
 .terminal-card-footer{display:flex;align-items:center;gap:6px;padding:6px 14px;background:rgba(0,0,0,0.2);border-top:1px solid var(--glass-border);flex-shrink:0}
 .footer-cmd-label{font-size:8px;font-weight:600;color:var(--glow-cyan);letter-spacing:1px;padding:1px 5px;background:rgba(0,229,255,0.1);border-radius:3px}
 .footer-cmd{font-size:11px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
