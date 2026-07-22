@@ -63,6 +63,13 @@ if (!window.electronAPI) {
     createFolderDialog: async (name) => { const p = await browserFolderPicker(); return p ? `${p}\\${name}` : null },
     pickParentFolder: async () => browserFolderPicker(),
     createFolderAt: async (parent, name) => `${parent}\\${name}`,
+    listDir: async (dir) => [
+      { name: 'src', isDirectory: true, isFile: false, size: 0 },
+      { name: 'package.json', isDirectory: false, isFile: true, size: 1200 },
+      { name: 'README.md', isDirectory: false, isFile: true, size: 340 },
+    ],
+    readFile: async () => 'file content preview (browser mock)',
+    getFileInfo: async () => null,
     checkUpdate: async () => {},
     downloadUpdate: async () => {},
     installUpdate: async () => {},

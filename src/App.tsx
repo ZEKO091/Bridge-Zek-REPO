@@ -6,11 +6,13 @@ import CityBackground from './components/CityBackground'
 import TitleBar from './components/TitleBar'
 import UpdateNotification from './components/UpdateNotification'
 import MainMenu from './components/MainMenu'
+import FileExplorer from './components/FileExplorer'
 import { useAppStore } from './store/appStore'
 import { useWorkspaceStore } from './store/workspaceStore'
 
 export default function App() {
   const notification = useAppStore((s) => s.notification)
+  const view = useAppStore((s) => s.view)
   const current = useWorkspaceStore((s) => s.current)
 
   if (!current) {
@@ -34,7 +36,7 @@ export default function App() {
         <TopBar />
         <div className="app-body">
           <Sidebar />
-          <Workspace />
+          {view === 'files' ? <FileExplorer /> : <Workspace />}
           <AIPanel />
         </div>
         {notification && <div className="toast-notification">{notification}</div>}

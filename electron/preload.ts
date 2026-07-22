@@ -71,4 +71,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     const h = (_e: any, e: string) => callback(e)
     ipcRenderer.on('update:error', h); return () => ipcRenderer.removeListener('update:error', h)
   },
+  listDir: (dir: string) => ipcRenderer.invoke('fs:listDir', dir),
+  readFile: (file: string) => ipcRenderer.invoke('fs:readFile', file),
+  getFileInfo: (p: string) => ipcRenderer.invoke('fs:getInfo', p),
 })

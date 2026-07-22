@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'path'
+import fs from 'fs'
 import { spawn, execSync } from 'child_process'
 import os from 'os'
 import { autoUpdater } from 'electron-updater'
@@ -280,6 +281,36 @@ ipcMain.handle('dialog:createFolderAt', async (_e, parentPath: string, name: str
   try {
     require('fs').mkdirSync(fullPath, { recursive: true })
     return fullPath
+  } catch { return null }
+})
+
+// ── File system ──
+ipcMain.handle('fs:listDir', async (_e, dirPath: string) => {
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+    return entries.map((e: any) => ({
+      name: e.name,
+      isDirectory: e.isDirectory(),
+      isFile: e.isFile(),
+      size: e.isFile() ? fs.statSync(path.join(dirPath, e.name)).size : 0,
+    })).sort((a: any, b: any) => {
+      if (a.isDirectory && !b.isDirectory) return -1
+      if (!a.isDirectory && b.isDirectory) return 1
+      return a.name.localeCompare(b.name)
+    })
+  } catch { return [] }
+})
+
+ipcMain.handle('fs:readFile', async (_e, filePath: string) => {
+  try {
+    return fs.readFileSync(filePath, 'utf-8')
+  } catch { return null }
+})
+
+ipcMain.handle('fs:getInfo', async (_e, itemPath: string) => {
+  try {
+    const stat = fs.statSync(itemPath)
+    return { size: stat.size, isDirectory: stat.isDirectory(), modified: stat.mtimeMs }
   } catch { return null }
 })
 

@@ -33,7 +33,12 @@ interface ElectronAPI {
   onUpdateProgress: (callback: (progress: UpdateProgress) => void) => () => void
   onUpdateDownloaded: (callback: () => void) => () => void
   onUpdateError: (callback: (err: string) => void) => () => void
+  listDir: (dir: string) => Promise<DirEntry[]>
+  readFile: (file: string) => Promise<string | null>
+  getFileInfo: (p: string) => Promise<{ size: number; isDirectory: boolean; modified: number } | null>
 }
+
+interface DirEntry { name: string; isDirectory: boolean; isFile: boolean; size: number }
 
 declare global {
   interface Window { electronAPI: ElectronAPI }
