@@ -36,6 +36,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   getSystemTools: () => ipcRenderer.invoke('system:getTools'),
+  runShell: (cmd: string) => ipcRenderer.invoke('shell:run', cmd),
 
   // ── Auto Update ──
   checkUpdate: () => ipcRenderer.invoke('update:check'),

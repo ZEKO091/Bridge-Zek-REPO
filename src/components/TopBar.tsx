@@ -1,5 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSystemStore } from '../store/systemStore'
+import { useAppStore } from '../store/appStore'
 
 export default function TopBar() {
   const cpu = useSystemStore((s) => s.cpu)
@@ -9,19 +10,55 @@ export default function TopBar() {
   const ramGB = useSystemStore((s) => s.ramGB)
   const ramTotal = useSystemStore((s) => s.ramTotal)
   const setMetrics = useSystemStore((s) => s.setMetrics)
+  const notify = useAppStore((s) => s.notify)
+
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [query, setQuery] = useState('')
 
   useEffect(() => {
     return window.electronAPI.onSystemMetrics(setMetrics)
   }, [setMetrics])
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault(); inputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
+  const handleSearch = async (cmd: string) => {
+    const trimmed = cmd.trim()
+    if (!trimmed) return
+
+    if (trimmed === 'cls' || trimmed === 'clear') {
+      setQuery(''); inputRef.current?.blur(); return
+    }
+    if (trimmed === 'tools') {
+      const tools = await window.electronAPI.getSystemTools()
+      notify(`Installed: ${tools.filter((t: any) => t.installed).map((t: any) => t.name).join(', ')}`)
+      setQuery(''); inputRef.current?.blur(); return
+    }
+
+    try {
+      const id = await window.electronAPI.createTerminal()
+      await window.electronAPI.writeToTerminal(id, `${trimmed}\r`)
+      const { useTerminalStore } = await import('../store/terminalStore')
+      useTerminalStore.getState().addTerminal(id)
+      setQuery(''); inputRef.current?.blur()
+    } catch {}
+  }
+
   return (
     <div className="top-bar">
       <div className="top-bar-left">
-        <div className="top-bar-workspace">
+        <div className="top-bar-workspace" onClick={() => notify('Bridge Lab - ZEK BRIDGE')} style={{ cursor: 'pointer' }}>
           <span className="top-bar-icon">◇</span>
           <span>Bridge Lab</span>
         </div>
-        <div className="top-bar-model">
+        <div className="top-bar-model" onClick={() => notify(`GPU: ${gpuName}`)} style={{ cursor: 'pointer' }}>
           <span className="model-dot" />
           <span>{gpuName.includes('Unknown') ? 'Local Machine' : gpuName.slice(0, 20)}</span>
           <span className="model-badge">{osType()}</span>
@@ -30,27 +67,34 @@ export default function TopBar() {
       <div className="top-bar-center">
         <div className="search-bar">
           <span className="search-icon">⌕</span>
-          <input type="text" placeholder="Search commands, files, agents..." readOnly />
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Type a command and press Enter..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleSearch(query) }}
+          />
           <span className="search-hint">Ctrl+K</span>
         </div>
       </div>
       <div className="top-bar-right">
-        <div className="metric">
+        <div className="metric" title={`CPU: ${cpu}%`}>
           <span className="metric-label">CPU</span>
           <span className="metric-value">{cpu}%</span>
           <div className="metric-bar"><div className="metric-fill cpu" style={{ width: `${cpu}%` }} /></div>
         </div>
-        <div className="metric">
+        <div className="metric" title={`GPU: ${gpu !== null ? `${gpu}%` : 'N/A'}`}>
           <span className="metric-label">GPU</span>
           <span className="metric-value">{gpu !== null ? `${gpu}%` : '—'}</span>
           <div className="metric-bar"><div className="metric-fill gpu" style={{ width: `${gpu ?? 0}%` }} /></div>
         </div>
-        <div className="metric">
+        <div className="metric" title={`RAM: ${ramGB.toFixed(1)}GB / ${ramTotal}GB`}>
           <span className="metric-label">RAM</span>
           <span className="metric-value">{ramGB.toFixed(1)}GB</span>
           <div className="metric-bar"><div className="metric-fill ram" style={{ width: `${ram}%` }} /></div>
         </div>
-        <div className="top-bar-avatar">ZK</div>
+        <div className="top-bar-avatar" onClick={() => notify('ZEK BRIDGE v1.0.0')} title="About" style={{ cursor: 'pointer' }}>ZK</div>
       </div>
     </div>
   )

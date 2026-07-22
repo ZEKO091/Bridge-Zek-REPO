@@ -5,8 +5,11 @@ import AIPanel from './components/AIPanel'
 import CityBackground from './components/CityBackground'
 import TitleBar from './components/TitleBar'
 import UpdateNotification from './components/UpdateNotification'
+import { useAppStore } from './store/appStore'
 
 export default function App() {
+  const notification = useAppStore((s) => s.notification)
+
   return (
     <div className="app-container">
       <CityBackground />
@@ -19,6 +22,9 @@ export default function App() {
           <Workspace />
           <AIPanel />
         </div>
+        {notification && (
+          <div className="toast-notification">{notification}</div>
+        )}
       </div>
     </div>
   )

@@ -141,6 +141,7 @@ html, body, #root {
 .terminal-card-actions { display: flex; gap: 4px; }
 .term-action-btn { width: 24px; height: 24px; background: none; border: 1px solid var(--glass-border); border-radius: 5px; color: var(--text-muted); font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .term-action-btn:hover { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.12); color: var(--text-primary); }
+.term-action-btn.active { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3); color: #F59E0B; }
 .terminal-card-body { flex: 1; position: relative; min-height: 0; }
 .terminal-container { position: absolute; top: 0; left: 0; right: 0; bottom: 0; padding: 4px; }
 .terminal-container .xterm { height: 100%; }
@@ -215,3 +216,14 @@ html, body, #root {
 .update-btn { padding: 3px 10px; background: rgba(0, 229, 255, 0.12); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 5px; color: var(--glow-cyan); font-family: 'Space Grotesk', sans-serif; font-size: 11px; cursor: pointer; }
 .update-btn:hover { background: rgba(0, 229, 255, 0.2); }
 .update-btn.dismiss { background: none; border-color: var(--glass-border); color: var(--text-muted); }
+
+/* ── Toast Notification ── */
+.toast-notification {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 1001;
+  padding: 8px 20px; background: rgba(5, 6, 8, 0.92); backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 8px;
+  color: var(--text-secondary); font-size: 12px; font-family: 'JetBrains Mono', monospace;
+  animation: toastIn 0.3s ease; white-space: nowrap; max-width: 90vw; overflow: hidden; text-overflow: ellipsis;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 229, 255, 0.06);
+}
+@keyframes toastIn { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }

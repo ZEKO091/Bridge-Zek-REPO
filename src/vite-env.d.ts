@@ -20,6 +20,7 @@ interface ElectronAPI {
   onSystemMetrics: (callback: (metrics: SystemMetrics) => void) => () => void
   onSystemTools: (callback: (tools: DetectedTool[]) => void) => () => void
   getSystemTools: () => Promise<DetectedTool[]>
+  runShell: (cmd: string) => Promise<string>
   checkUpdate: () => Promise<void>
   downloadUpdate: () => Promise<void>
   installUpdate: () => Promise<void>

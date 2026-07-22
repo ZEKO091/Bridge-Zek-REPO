@@ -242,6 +242,17 @@ ipcMain.handle('update:check', () => { autoUpdater.checkForUpdates() })
 ipcMain.handle('update:download', () => { autoUpdater.downloadUpdate() })
 ipcMain.handle('update:install', () => { autoUpdater.quitAndInstall() })
 
+ipcMain.handle('shell:run', async (_e, cmd: string) => {
+  return new Promise<string>((resolve) => {
+    const child = spawn('cmd', ['/c', cmd], { windowsHide: true, timeout: 10000 })
+    let out = ''
+    child.stdout?.on('data', (d: Buffer) => { out += d.toString() })
+    child.stderr?.on('data', (d: Buffer) => { out += d.toString() })
+    child.on('close', () => resolve(out.trim()))
+    child.on('error', () => resolve(''))
+  })
+})
+
 ipcMain.handle('terminal:create', () => {
   const id = `term-${++terminalCounter}`
   if (!nodePty) {
