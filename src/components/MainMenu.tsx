@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import { useTerminalStore } from '../store/terminalStore'
-import { api } from '../lib/electronMock'
 
 export default function MainMenu() {
   const [newName, setNewName] = useState('')
@@ -12,13 +11,13 @@ export default function MainMenu() {
   const openWithTerminal = async (path: string, name: string) => {
     setWorkspace({ path, name, openedAt: Date.now() })
     try {
-      const id = await api.createTerminal()
+      const id = await window.electronAPI.createTerminal()
       addTerminal(id)
     } catch {}
   }
 
   const handleOpen = async () => {
-    const folder = await api.openFolderDialog()
+    const folder = await window.electronAPI.openFolderDialog()
     if (folder) {
       openWithTerminal(folder, folder.split(/[\\/]/).pop() || 'Workspace')
     }
@@ -26,7 +25,7 @@ export default function MainMenu() {
 
   const handleCreate = async () => {
     const name = newName.trim() || 'my-zek-workspace'
-    const folder = await api.createFolderDialog(name)
+    const folder = await window.electronAPI.createFolderDialog(name)
     if (folder) {
       openWithTerminal(folder, name)
     }
