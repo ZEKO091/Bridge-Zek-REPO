@@ -84,7 +84,7 @@ export default function MainMenu() {
             <div className="mm-status">
               <span className="mm-status-dot" />
               <span className="mm-status-text">AI Workspace</span>
-              <span className="mm-status-badge">v1.0.8</span>
+              <span className="mm-status-badge">v1.0.9</span>
             </div>
           </div>
 
@@ -189,6 +189,7 @@ export default function MainMenu() {
     </div>
   )
 }
+
 
 
 
