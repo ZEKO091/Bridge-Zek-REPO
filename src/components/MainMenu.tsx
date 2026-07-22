@@ -3,7 +3,8 @@ import { useWorkspaceStore } from '../store/workspaceStore'
 import { useTerminalStore } from '../store/terminalStore'
 
 export default function MainMenu() {
-  const [newName, setNewName] = useState('')
+  const [parentDir, setParentDir] = useState('')
+  const [projectName, setProjectName] = useState('')
   const recent = useWorkspaceStore((s) => s.recent)
   const setWorkspace = useWorkspaceStore((s) => s.setWorkspace)
   const addTerminal = useTerminalStore((s) => s.addTerminal)
@@ -23,12 +24,16 @@ export default function MainMenu() {
     }
   }
 
+  const handleBrowse = async () => {
+    const folder = await window.electronAPI.pickParentFolder()
+    if (folder) setParentDir(folder)
+  }
+
   const handleCreate = async () => {
-    const name = newName.trim() || 'my-zek-workspace'
-    const folder = await window.electronAPI.createFolderDialog(name)
-    if (folder) {
-      openWithTerminal(folder, name)
-    }
+    const name = projectName.trim()
+    if (!name || !parentDir) return
+    const fullPath = await window.electronAPI.createFolderAt(parentDir, name)
+    if (fullPath) openWithTerminal(fullPath, name)
   }
 
   const handleRecent = (ws: { path: string; name: string }) => {
@@ -52,19 +57,48 @@ export default function MainMenu() {
               <span className="mm-desc">Select an existing project folder</span>
             </div>
 
-            <div className="main-menu-card create">
+            <div className="main-menu-card">
               <span className="mm-icon">+</span>
-              <div className="mm-create-row">
+              <span className="mm-title">Create New Workspace</span>
+
+              <div className="mm-path-row">
+                <span className="mm-path-label">Parent directory</span>
+                <div className="mm-path-input-row">
+                  <input
+                    className="mm-input path"
+                    placeholder="C:\Users\ianda\Projects"
+                    value={parentDir}
+                    onChange={(e) => setParentDir(e.target.value)}
+                  />
+                  <button className="mm-browse-btn" onClick={handleBrowse}>Browse</button>
+                </div>
+              </div>
+
+              <div className="mm-path-row">
+                <span className="mm-path-label">Project name</span>
                 <input
                   className="mm-input"
                   placeholder="my-zek-workspace"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
                 />
-                <button className="mm-create-btn" onClick={handleCreate}>Create</button>
               </div>
-              <span className="mm-desc">New project folder</span>
+
+              {parentDir && projectName.trim() && (
+                <div className="mm-path-preview">
+                  <span className="mm-preview-icon">▦</span>
+                  <span className="mm-preview-path">{parentDir}\{projectName.trim()}</span>
+                </div>
+              )}
+
+              <button
+                className="mm-create-btn full"
+                disabled={!parentDir || !projectName.trim()}
+                onClick={handleCreate}
+              >
+                Create Workspace
+              </button>
             </div>
           </div>
 

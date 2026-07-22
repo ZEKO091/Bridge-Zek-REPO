@@ -255,11 +255,28 @@ ipcMain.handle('dialog:openFolder', async () => {
 ipcMain.handle('dialog:createFolder', async (_e, name: string) => {
   const result = await dialog.showOpenDialog(mainWindow!, {
     properties: ['openDirectory', 'createDirectory'],
-    title: `Create workspace "${name}"`,
+    title: `Select parent folder for "${name}"`,
   })
   if (result.canceled || !result.filePaths.length) return null
   const basePath = result.filePaths[0]
   const fullPath = path.join(basePath, name)
+  try {
+    require('fs').mkdirSync(fullPath, { recursive: true })
+    return fullPath
+  } catch { return null }
+})
+
+ipcMain.handle('dialog:pickParent', async () => {
+  const result = await dialog.showOpenDialog(mainWindow!, {
+    properties: ['openDirectory'],
+    title: 'Select parent directory for new workspace',
+  })
+  if (result.canceled || !result.filePaths.length) return null
+  return result.filePaths[0]
+})
+
+ipcMain.handle('dialog:createFolderAt', async (_e, parentPath: string, name: string) => {
+  const fullPath = path.join(parentPath, name)
   try {
     require('fs').mkdirSync(fullPath, { recursive: true })
     return fullPath

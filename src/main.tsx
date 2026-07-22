@@ -38,14 +38,10 @@ if (!window.electronAPI) {
       { name: 'Git', version: '2.45.0', path: '', installed: true },
     ],
     runShell: async () => 'ok',
-    openFolderDialog: async () => {
-      const p = prompt('Enter workspace path:')
-      return p || null
-    },
-    createFolderDialog: async (name) => {
-      const p = prompt(`Parent folder for "${name}":`)
-      return p ? `${p}\\${name}` : null
-    },
+    openFolderDialog: async () => { const p = prompt('Enter workspace path:'); return p || null },
+    createFolderDialog: async (name) => { const p = prompt(`Parent folder for "${name}":`); return p ? `${p}\\${name}` : null },
+    pickParentFolder: async () => { const p = prompt('Select parent directory:'); return p || null },
+    createFolderAt: async (parent, name) => { return `${parent}\\${name}` },
     checkUpdate: async () => {},
     downloadUpdate: async () => {},
     installUpdate: async () => {},

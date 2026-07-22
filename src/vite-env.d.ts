@@ -23,6 +23,8 @@ interface ElectronAPI {
   runShell: (cmd: string) => Promise<string>
   openFolderDialog: () => Promise<string | null>
   createFolderDialog: (name: string) => Promise<string | null>
+  pickParentFolder: () => Promise<string | null>
+  createFolderAt: (parent: string, name: string) => Promise<string | null>
   checkUpdate: () => Promise<void>
   downloadUpdate: () => Promise<void>
   installUpdate: () => Promise<void>

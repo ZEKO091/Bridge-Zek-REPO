@@ -39,6 +39,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   runShell: (cmd: string) => ipcRenderer.invoke('shell:run', cmd),
   openFolderDialog: () => ipcRenderer.invoke('dialog:openFolder'),
   createFolderDialog: (name: string) => ipcRenderer.invoke('dialog:createFolder', name),
+  pickParentFolder: () => ipcRenderer.invoke('dialog:pickParent'),
+  createFolderAt: (parent: string, name: string) => ipcRenderer.invoke('dialog:createFolderAt', parent, name),
 
   // ── Auto Update ──
   checkUpdate: () => ipcRenderer.invoke('update:check'),

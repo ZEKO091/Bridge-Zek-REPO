@@ -249,8 +249,19 @@ html, body, #root {
 .mm-create-row { display: flex; gap: 8px; }
 .mm-input { flex: 1; padding: 6px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); border-radius: 6px; color: var(--text-primary); font-family: 'Space Grotesk', sans-serif; font-size: 13px; outline: none; }
 .mm-input:focus { border-color: rgba(0, 229, 255, 0.3); }
+.mm-input.path { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.mm-browse-btn { padding: 6px 14px; background: rgba(0,229,255,0.08); border: 1px solid rgba(0,229,255,0.15); border-radius: 6px; color: var(--glow-cyan); font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.mm-browse-btn:hover { background: rgba(0,229,255,0.15); }
 .mm-create-btn { padding: 6px 16px; background: linear-gradient(135deg, rgba(0,229,255,0.15), rgba(124,58,237,0.15)); border: 1px solid rgba(0,229,255,0.2); border-radius: 6px; color: var(--glow-cyan); font-family: 'Space Grotesk', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; }
 .mm-create-btn:hover { background: linear-gradient(135deg, rgba(0,229,255,0.25), rgba(124,58,237,0.25)); }
+.mm-create-btn.full { width: 100%; padding: 10px; font-size: 13px; margin-top: 8px; }
+.mm-create-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.mm-path-row { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.mm-path-label { font-size: 10px; color: var(--text-muted); letter-spacing: 0.5px; text-transform: uppercase; }
+.mm-path-input-row { display: flex; gap: 6px; }
+.mm-path-preview { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 10px; background: rgba(0,229,255,0.04); border: 1px solid rgba(0,229,255,0.1); border-radius: 6px; font-size: 11px; color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; }
+.mm-preview-icon { color: var(--glow-cyan); font-size: 12px; }
+.mm-preview-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .main-menu-recent { width: 100%; display: flex; flex-direction: column; gap: 8px; }
 .main-menu-recent h3 { font-size: 11px; color: var(--text-muted); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
 .recent-list { display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; }
