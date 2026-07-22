@@ -93,7 +93,7 @@ export default function TopBar() {
         </div>
         <div className="metric" title={`GPU: ${gpu !== null ? `${gpu}%` : 'N/A'}`}>
           <span className="metric-label">GPU</span>
-          <span className="metric-value">{gpu !== null ? `${gpu}%` : '—'}</span>
+          <span className="metric-value">{gpu !== null && gpu !== undefined ? `${gpu}%` : '—'}</span>
           <div className="metric-bar"><div className="metric-fill gpu" style={{ width: `${gpu ?? 0}%` }} /></div>
         </div>
         <div className="metric" title={`RAM: ${ramGB.toFixed(1)}GB / ${ramTotal}GB`}>

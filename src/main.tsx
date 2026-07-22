@@ -50,7 +50,7 @@ if (!window.electronAPI) {
     onTerminalData: (id, cb) => { if (!termCbs.has(id)) termCbs.set(id, { data: cb, exit: () => {}, stats: () => {} }); const e = termCbs.get(id)!; e.data = cb; return () => {} },
     onTerminalExit: (id, cb) => { if (!termCbs.has(id)) termCbs.set(id, { data: () => {}, exit: cb, stats: () => {} }); const e = termCbs.get(id)!; e.exit = cb; return () => {} },
     onTerminalStats: (id, cb) => { if (!termCbs.has(id)) termCbs.set(id, { data: () => {}, exit: () => {}, stats: cb }); const e = termCbs.get(id)!; e.stats = cb; return () => {} },
-    onSystemMetrics: (cb) => { setInterval(() => cb({ cpu: Math.round(Math.random()*100), gpu: Math.round(Math.random()*100), gpuName: 'Simulated GPU', ram: Math.round(Math.random()*100), ramGB: Math.random()*16, ramTotal: '16' }), 3000); return () => {} },
+    onSystemMetrics: (cb) => { setInterval(() => cb({ cpu: Math.round(Math.random()*100), gpu: Math.round(Math.random()*100), gpuName: 'Simulated GPU', ram: Math.round(Math.random()*100), ramGB: Math.random()*16, ramTotal: '16', procRAM: Math.round(Math.random()*500+100), cores: 8 }), 3000); return () => {} },
     onSystemTools: () => () => {},
     getSystemTools: async () => [
       { name: 'Node.js', version: 'v24.3.0', path: '', installed: true },

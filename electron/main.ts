@@ -12,10 +12,11 @@ let mainWindow: BrowserWindow | null = null
 const terminals: Map<string, any> = new Map()
 let terminalCounter = 0
 
-// ── CPU tracking ──
+// ── Real system metrics ──
 let cpuLoad = 0
 let prevIdle = 0
 let prevTotal = 0
+let cpuCores = os.cpus().length
 
 function pollCPU() {
   const cpus = os.cpus()
@@ -29,29 +30,52 @@ function pollCPU() {
   if (prevTotal > 0) {
     const dIdle = idle - prevIdle
     const dTotal = total - prevTotal
-    cpuLoad = Math.round(100 * (1 - dIdle / dTotal))
+    cpuLoad = Math.min(100, Math.max(0, Math.round(100 * (1 - dIdle / dTotal))))
   }
   prevIdle = idle
   prevTotal = total
 }
 
-// ── GPU detection ──
-let gpuName = 'Unknown'
-let gpuLoad = 0
+let gpuName = 'Detecting...'
+let gpuLoad: number | null = null
+let gpuVendor = ''
+
 function detectGPU() {
   try {
-    const out = execSync('wmic path win32_VideoController get name', { encoding: 'utf8', timeout: 3000 })
-    const lines = out.split('\n').map(l => l.trim()).filter(l => l && !l.includes('Name'))
-    if (lines.length > 0) gpuName = lines[0]
+    const out = execSync('wmic path win32_VideoController get name,AdapterRAM /format:csv', { encoding: 'utf8', timeout: 3000 })
+    const lines = out.split('\n').map(l => l.trim()).filter(l => l && !l.includes('Name') && !l.includes('Node'))
+    if (lines.length > 0) {
+      const parts = lines[0].split(',')
+      const name = parts[parts.length - 2] || parts[0]
+      gpuName = name
+      gpuVendor = name.toLowerCase().includes('nvidia') ? 'nvidia' : 
+                  name.toLowerCase().includes('amd') || name.toLowerCase().includes('radeon') ? 'amd' :
+                  name.toLowerCase().includes('intel') ? 'intel' : 'other'
+    }
   } catch {}
 }
+
 function pollGPU() {
-  try {
-    const out = execSync('nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits', { encoding: 'utf8', timeout: 2000 })
-    gpuLoad = Math.min(100, Math.max(0, parseInt(out.trim()))) || 0
-  } catch {
-    gpuLoad = -1
+  if (gpuVendor === 'nvidia') {
+    try {
+      const out = execSync('nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits', { encoding: 'utf8', timeout: 2000 })
+      gpuLoad = Math.min(100, Math.max(0, parseInt(out.trim()))) || 0
+      return
+    } catch {}
   }
+  if (gpuVendor === 'amd') {
+    try {
+      const out = execSync('wmic path win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine where "Name like \'%3D%\'" get PercentUtilization', { encoding: 'utf8', timeout: 2000 })
+      const val = parseInt(out.trim().split('\n').filter(l => l.trim() && !l.includes('Percent'))[0])
+      if (!isNaN(val)) { gpuLoad = Math.min(100, Math.max(0, val)); return }
+    } catch {}
+  }
+  try {
+    const out = execSync('wmic path win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine get PercentUtilization', { encoding: 'utf8', timeout: 2000 })
+    const val = parseInt(out.trim().split('\n').filter(l => l.trim() && !l.includes('Percent'))[0])
+    if (!isNaN(val)) { gpuLoad = Math.min(100, Math.max(0, val)); return }
+  } catch {}
+  gpuLoad = null
 }
 
 // ── Tool detection ──
@@ -216,13 +240,22 @@ app.whenReady().then(async () => {
 
     pollGPU()
 
+    let procRAM = 0
+    try {
+      const pOut = execSync(`wmic process where ProcessId=${process.pid} get WorkingSetSize`, { encoding: 'utf8', timeout: 1000 })
+      const pVal = parseInt(pOut.trim().split('\n').filter(l => l.trim() && !l.includes('WorkingSetSize'))[0])
+      if (!isNaN(pVal)) procRAM = Math.round(pVal / 1024 / 1024)
+    } catch {}
+
     mainWindow?.webContents.send('system:metrics', {
       cpu: cpuLoad,
-      gpu: gpuLoad > -1 ? gpuLoad : null,
+      gpu: gpuLoad !== null ? gpuLoad : null,
       gpuName,
       ram: ramPercent,
       ramGB: parseFloat(ramGB),
       ramTotal: (totalMem / 1024 / 1024 / 1024).toFixed(1),
+      procRAM,
+      cores: cpuCores,
     })
   }, 2000)
 })

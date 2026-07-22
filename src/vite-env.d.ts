@@ -1,5 +1,5 @@
 interface SystemMetrics {
-  cpu: number; gpu: number | null; gpuName: string; ram: number; ramGB: number; ramTotal: string
+  cpu: number; gpu: number | null; gpuName: string; ram: number; ramGB: number; ramTotal: string; procRAM?: number; cores?: number
 }
 interface DetectedTool { name: string; version: string; path: string; installed: boolean }
 interface TerminalStats { ram: number }
