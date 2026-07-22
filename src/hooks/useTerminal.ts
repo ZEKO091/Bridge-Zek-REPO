@@ -88,6 +88,23 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
     }
     window.addEventListener('resize', debouncedResize)
 
+    // Ctrl+C = copy, Ctrl+V = paste, not terminal signals
+    term.attachCustomKeyEventHandler((e) => {
+      if (e.type !== 'keydown') return true
+      const isCtrl = e.ctrlKey || e.metaKey
+      if (isCtrl && e.key === 'c') {
+        const sel = term.getSelection()
+        if (sel) { navigator.clipboard.writeText(sel).catch(() => {}); term.clearSelection(); return false }
+        return true // pass through if no selection (doesn't send SIGINT)
+      }
+      if (isCtrl && e.key === 'v') {
+        navigator.clipboard.readText().then(t => { if (t) term.write(t) }).catch(() => {})
+        return false
+      }
+      if (isCtrl && e.key === 'a') { term.selectAll(); return false }
+      return true
+    })
+
     term.onData((data) => {
       if (!pausedRef.current) window.electronAPI.writeToTerminal(terminalId, data)
     })
