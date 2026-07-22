@@ -46,7 +46,9 @@
           ]
         }
       ],
-      "icon": null
+      "icon": null,
+      "certificateSubjectName": null,
+      "certificateSha1": null
     },
     "nsis": {
       "oneClick": false,

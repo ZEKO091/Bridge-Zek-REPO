@@ -145,6 +145,19 @@ autoUpdater.autoInstallOnAppQuit = true
 // El instalador reemplaza los archivos en el mismo lugar (no desinstala).
 // Los datos del usuario en AppData/Roaming se conservan siempre.
 
+// ── Single instance lock ──
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    }
+  })
+}
+
 app.whenReady().then(async () => {
   createWindow()
   detectGPU()
