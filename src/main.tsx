@@ -4,25 +4,8 @@ import App from './App'
 import './styles/index.css'
 
 function browserFolderPicker(): Promise<string | null> {
-  return new Promise((resolve) => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.setAttribute('webkitdirectory', '')
-    input.setAttribute('directory', '')
-    input.style.display = 'none'
-    input.addEventListener('change', () => {
-      const path = (input as any).files?.[0]?.path
-      if (path) {
-        resolve(path.replace(/[^\\/]+$/, '').replace(/\\$/, ''))
-      } else {
-        resolve(input.value ? input.value.split('\\').slice(0, -1).join('\\').replace(/\\$/,'') || null : null)
-      }
-      input.remove()
-    })
-    input.addEventListener('cancel', () => { resolve(null); input.remove() })
-    document.body.appendChild(input)
-    input.click()
-  })
+  const p = prompt('Enter the full path to your workspace folder:\n(e.g. C:\\Users\\YourName\\Projects)')
+  return Promise.resolve(p || null)
 }
 
 const termCbs: Map<string, { data: (d: string) => void; exit: () => void; stats: (s: { ram: number }) => void }> = new Map()

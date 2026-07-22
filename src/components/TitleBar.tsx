@@ -5,7 +5,7 @@ export default function TitleBar() {
         <div className="title-bar-brand">
           <div className="title-bar-logo" />
           <span className="title-bar-text">ZEK BRIDGE</span>
-          <span className="title-bar-version">v1.0.0</span>
+          <span className="title-bar-version">v1.0.1</span>
         </div>
       </div>
       <div className="title-bar-actions">

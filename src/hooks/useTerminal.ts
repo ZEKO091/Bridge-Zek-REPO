@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import { useTerminalStore } from '../store/terminalStore'
+import { useWorkspaceStore } from '../store/workspaceStore'
 
 export function useTerminal(terminalId: string, containerRef: React.RefObject<HTMLDivElement>) {
   const termRef = useRef<Terminal | null>(null)
@@ -56,11 +57,27 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
         if (lastLine && !lastLine.startsWith('PS') && !lastLine.startsWith('Microsoft')) {
           setCommand(terminalId, lastLine)
         }
-        if (outputBuffer.length > 1000) outputBuffer = outputBuffer.slice(-500)
+        if (outputBuffer.length > 2000) {
+          saveBuffer()
+          outputBuffer = ''
+        }
       }
     })
 
+    const saveBuffer = () => {
+      if (!outputBuffer) return
+      const ws = useWorkspaceStore.getState().current
+      if (ws?.path) {
+        window.electronAPI.saveTerminalHistory(ws.path, terminalId, outputBuffer)
+      }
+    }
+
+    const autoSave = setInterval(() => {
+      if (!pausedRef.current) saveBuffer()
+    }, 10000)
+
     const exitCleanup = window.electronAPI.onTerminalExit(terminalId, () => {
+      saveBuffer()
       updateTerminal(terminalId, { status: 'stopped' })
     })
 
@@ -69,6 +86,8 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
     termRef.current = term
 
     return () => {
+      clearInterval(autoSave)
+      saveBuffer()
       dataCleanup()
       exitCleanup()
       term.dispose()

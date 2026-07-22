@@ -52,7 +52,7 @@ export default function App() {
     }
   }, [menuOpen, current?.path])
 
-  if (menuOpen) {
+  if (menuOpen || !current) {
     return (
       <div className="app-container">
         <CityBackground />

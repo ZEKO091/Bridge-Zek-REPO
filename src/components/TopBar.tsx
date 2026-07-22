@@ -101,7 +101,7 @@ export default function TopBar() {
           <span className="metric-value">{ramGB.toFixed(1)}GB</span>
           <div className="metric-bar"><div className="metric-fill ram" style={{ width: `${ram}%` }} /></div>
         </div>
-        <div className="top-bar-avatar" onClick={() => notify('ZEK BRIDGE v1.0.0')} title="About" style={{ cursor: 'pointer' }}>ZK</div>
+        <div className="top-bar-avatar" onClick={() => notify('ZEK BRIDGE v1.0.1')} title="About" style={{ cursor: 'pointer' }}>ZK</div>
       </div>
     </div>
   )
