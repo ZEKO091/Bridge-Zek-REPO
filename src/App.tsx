@@ -10,6 +10,9 @@ import FileExplorer from './components/FileExplorer'
 import DashboardView from './components/DashboardView'
 import AgentsView from './components/AgentsView'
 import MemoryView from './components/MemoryView'
+import SettingsView from './components/SettingsView'
+import AnalyticsView from './components/AnalyticsView'
+import GitView from './components/GitView'
 import { useAppStore } from './store/appStore'
 import { useWorkspaceStore } from './store/workspaceStore'
 import { useTerminalStore, canAddTerminal } from './store/terminalStore'
@@ -23,6 +26,9 @@ function MainView() {
     case 'dashboard': return <DashboardView />
     case 'agents': return <AgentsView />
     case 'memory': return <MemoryView />
+    case 'settings': return <SettingsView />
+    case 'analytics': return <AnalyticsView />
+    case 'git': return <GitView />
     default: return <Workspace />
   }
 }
