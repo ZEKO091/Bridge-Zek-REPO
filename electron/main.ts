@@ -314,6 +314,13 @@ ipcMain.handle('fs:getInfo', async (_e, itemPath: string) => {
   } catch { return null }
 })
 
+ipcMain.handle('fs:writeFile', async (_e, filePath: string, content: string) => {
+  try {
+    fs.writeFileSync(filePath, content, 'utf-8')
+    return true
+  } catch { return false }
+})
+
 ipcMain.handle('update:check', () => { autoUpdater.checkForUpdates() })
 ipcMain.handle('update:download', () => { autoUpdater.downloadUpdate() })
 ipcMain.handle('update:install', () => { autoUpdater.quitAndInstall() })

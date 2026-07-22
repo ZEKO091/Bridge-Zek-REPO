@@ -9,6 +9,7 @@ import MainMenu from './components/MainMenu'
 import FileExplorer from './components/FileExplorer'
 import DashboardView from './components/DashboardView'
 import AgentsView from './components/AgentsView'
+import MemoryView from './components/MemoryView'
 import { useAppStore } from './store/appStore'
 import { useWorkspaceStore } from './store/workspaceStore'
 
@@ -18,8 +19,8 @@ function MainView() {
     case 'files': return <FileExplorer />
     case 'dashboard': return <DashboardView />
     case 'agents': return <AgentsView />
+    case 'memory': return <MemoryView />
     case 'models':
-    case 'memory':
     case 'analytics':
     case 'settings':
     case 'git':

@@ -17,8 +17,7 @@ class ZEKHandler(http.server.SimpleHTTPRequestHandler):
             params = urllib.parse.parse_qs(qs)
             folder = params.get('path', [''])[0]
             if not folder or not os.path.isdir(folder):
-                self.send_json([])
-                return
+                self.send_json([]); return
             try:
                 entries = []
                 for name in os.listdir(folder):
@@ -31,7 +30,45 @@ class ZEKHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 self.send_json({'error': str(e)}, 500)
             return
+
+        if self.path.startswith('/api/read'):
+            qs = urllib.parse.urlparse(self.path).query
+            params = urllib.parse.parse_qs(qs)
+            filepath = params.get('file', [''])[0]
+            if filepath and os.path.isfile(filepath):
+                try:
+                    with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+                        content = f.read()
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'text/plain')
+                    self.end_headers()
+                    self.wfile.write(content.encode('utf-8'))
+                    return
+                except:
+                    pass
+            self.send_error(404)
+            return
+
         return super().do_GET()
+
+    def do_POST(self):
+        if self.path == '/api/write':
+            length = int(self.headers.get('Content-Length', 0))
+            body = json.loads(self.rfile.read(length).decode('utf-8'))
+            filepath = body.get('file', '')
+            content = body.get('content', '')
+            if filepath:
+                try:
+                    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+                    with open(filepath, 'w', encoding='utf-8') as f:
+                        f.write(content)
+                    self.send_json({'ok': True})
+                except Exception as e:
+                    self.send_json({'error': str(e)}, 500)
+                return
+            self.send_json({'error': 'no file'}, 400)
+            return
+        return super().do_POST()
 
     def send_json(self, data, status=200):
         self.send_response(status)

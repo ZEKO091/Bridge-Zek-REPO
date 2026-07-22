@@ -70,7 +70,8 @@ if (!window.electronAPI) {
       } catch {}
       return []
     },
-    readFile: async () => 'file content preview (browser mock)',
+    readFile: async (f) => { try { const r = await fetch(`/api/read?file=${encodeURIComponent(f)}`); if (r.ok) return await r.text(); return 'mock content' } catch { return 'mock content' } },
+    writeFile: async () => true,
     getFileInfo: async () => null,
     checkUpdate: async () => {},
     downloadUpdate: async () => {},

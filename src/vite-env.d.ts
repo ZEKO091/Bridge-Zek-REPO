@@ -35,6 +35,7 @@ interface ElectronAPI {
   onUpdateError: (callback: (err: string) => void) => () => void
   listDir: (dir: string) => Promise<DirEntry[]>
   readFile: (file: string) => Promise<string | null>
+  writeFile: (file: string, content: string) => Promise<boolean>
   getFileInfo: (p: string) => Promise<{ size: number; isDirectory: boolean; modified: number } | null>
 }
 
