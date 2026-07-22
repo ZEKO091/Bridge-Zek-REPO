@@ -195,8 +195,13 @@ app.whenReady().then(async () => {
     mainWindow?.webContents.send('update:downloaded')
   })
 
-  autoUpdater.on('error', () => {
-    mainWindow?.webContents.send('update:status', 'up-to-date')
+  autoUpdater.on('error', (err) => {
+    const msg = err?.message || ''
+    if (msg.includes('Cannot find latest') || msg.includes('404') || msg.includes('no versions')) {
+      mainWindow?.webContents.send('update:status', 'up-to-date')
+    } else {
+      mainWindow?.webContents.send('update:error', msg)
+    }
   })
 
   pollCPU()
