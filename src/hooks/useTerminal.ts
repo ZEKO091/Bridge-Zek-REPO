@@ -88,20 +88,37 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
     }
     window.addEventListener('resize', debouncedResize)
 
-    // Ctrl+C = copy, Ctrl+V = paste, not terminal signals
+    // Keyboard shortcuts matching VS Code / Windows Terminal
     term.attachCustomKeyEventHandler((e) => {
       if (e.type !== 'keydown') return true
-      const isCtrl = e.ctrlKey || e.metaKey
-      if (isCtrl && e.key === 'c') {
-        const sel = term.getSelection()
-        if (sel) { navigator.clipboard.writeText(sel).catch(() => {}); term.clearSelection(); return false }
-        return true // pass through if no selection (doesn't send SIGINT)
-      }
-      if (isCtrl && e.key === 'v') {
-        navigator.clipboard.readText().then(t => { if (t) term.write(t) }).catch(() => {})
+      const ctrl = e.ctrlKey || e.metaKey
+      const shift = e.shiftKey
+
+      // Ctrl+Shift+C → copy always
+      if (ctrl && shift && e.key === 'C') {
+        const sel = term.getSelection() || term.buffer.active.getLine(term.buffer.active.cursorY)?.translateToString()
+        if (sel) navigator.clipboard.writeText(sel).catch(() => {})
+        if (term.getSelection()) term.clearSelection()
         return false
       }
-      if (isCtrl && e.key === 'a') { term.selectAll(); return false }
+      // Ctrl+Shift+V → paste always
+      if (ctrl && shift && e.key === 'V') {
+        navigator.clipboard.readText().then(t => { if (t) term.paste(t) }).catch(() => {})
+        return false
+      }
+      // Ctrl+C → copy if selection exists, else interrupt signal
+      if (ctrl && !shift && e.key === 'c') {
+        const sel = term.getSelection()
+        if (sel) { navigator.clipboard.writeText(sel).catch(() => {}); term.clearSelection(); return false }
+        return true // pass through as SIGINT
+      }
+      // Ctrl+V → paste
+      if (ctrl && !shift && e.key === 'v') {
+        navigator.clipboard.readText().then(t => { if (t) term.paste(t) }).catch(() => {})
+        return false
+      }
+      // Ctrl+A → select all
+      if (ctrl && e.key === 'a') { term.selectAll(); return false }
       return true
     })
 
