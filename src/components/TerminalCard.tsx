@@ -10,7 +10,7 @@ interface TerminalCardProps {
 export default function TerminalCard({ terminalId }: TerminalCardProps) {
   const cardRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const { fitTerminal, togglePause, writeToTerminal } = useTerminal(terminalId, containerRef)
+  const { fitTerminal, togglePause, writeToTerminal, clearTerminal } = useTerminal(terminalId, containerRef)
   const terminal = useTerminalStore((s) => s.terminals.find((t) => t.id === terminalId))
   const removeTerminal = useTerminalStore((s) => s.removeTerminal)
   const updateTerminal = useTerminalStore((s) => s.updateTerminal)
@@ -59,7 +59,7 @@ export default function TerminalCard({ terminalId }: TerminalCardProps) {
     if (nowPaused) writeToTerminal('\x1b[2K\rOutput paused — click Resume to continue\r\n')
   }
 
-  const handleClear = () => writeToTerminal('\x1b[2J\x1b[H')
+  const handleClear = () => clearTerminal()
   const handleRestart = async () => {
     await window.electronAPI.killTerminal(terminalId)
     removeTerminal(terminalId)

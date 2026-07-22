@@ -146,5 +146,14 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
     window.electronAPI.writeToTerminal(terminalId, text)
   }, [terminalId])
 
-  return { fitTerminal, togglePause, writeToTerminal }
+  const clearTerminal = useCallback(() => {
+    const term = termRef.current
+    if (term) {
+      term.clear()
+      term.write('\x1b[H')
+      term.focus()
+    }
+  }, [])
+
+  return { fitTerminal, togglePause, writeToTerminal, clearTerminal }
 }
