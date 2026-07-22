@@ -33,13 +33,13 @@ function MainView() {
 
 export default function App() {
   const notification = useAppStore((s) => s.notification)
+  const menuOpen = useAppStore((s) => s.menuOpen)
   const current = useWorkspaceStore((s) => s.current)
   const addTerminal = useTerminalStore((s) => s.addTerminal)
   const terminals = useTerminalStore((s) => s.terminals)
 
-  // Restore terminals when workspace loads with saved terminalCount
   useEffect(() => {
-    if (current && terminals.length === 0 && current.terminalCount && current.terminalCount > 0) {
+    if (!menuOpen && current && terminals.length === 0 && current.terminalCount && current.terminalCount > 0) {
       const restore = async () => {
         for (let i = 0; i < (current.terminalCount || 1); i++) {
           try {
@@ -50,9 +50,9 @@ export default function App() {
       }
       restore()
     }
-  }, [current?.path])
+  }, [menuOpen, current?.path])
 
-  if (!current) {
+  if (menuOpen) {
     return (
       <div className="app-container">
         <CityBackground />
