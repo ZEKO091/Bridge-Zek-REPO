@@ -47,8 +47,12 @@ export default function CityBackground() {
       const h = canvas.height
       const groundY = h * 0.75
       const grad = ctx.createLinearGradient(0, 0, 0, h)
-      grad.addColorStop(0, '#020408'); grad.addColorStop(0.3, '#050812'); grad.addColorStop(0.5, '#080C18'); grad.addColorStop(0.7, '#0A1020'); grad.addColorStop(1, '#0F1828')
+      grad.addColorStop(0, '#0A0E1A'); grad.addColorStop(0.3, '#0E1525'); grad.addColorStop(0.5, '#121A2E'); grad.addColorStop(0.7, '#162035'); grad.addColorStop(1, '#1A2540')
       ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h)
+      // Horizon glow
+      const hGrad = ctx.createRadialGradient(w/2, groundY, 0, w/2, groundY, h*0.3)
+      hGrad.addColorStop(0, 'rgba(0,229,255,0.06)'); hGrad.addColorStop(0.5, 'rgba(59,130,246,0.03)'); hGrad.addColorStop(1, 'transparent')
+      ctx.fillStyle = hGrad; ctx.fillRect(0, 0, w, h)
       drawAurora(time); drawStars(time); drawMoon()
       for (const b of buildings) {
         const by = groundY - b.h
