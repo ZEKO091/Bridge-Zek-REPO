@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'path'
 import { spawn, execSync } from 'child_process'
 import os from 'os'
@@ -242,6 +242,29 @@ ipcMain.on('window:maximize', () => {
 ipcMain.on('window:close', () => mainWindow?.close())
 
 ipcMain.handle('system:getTools', () => detectedTools)
+
+ipcMain.handle('dialog:openFolder', async () => {
+  const result = await dialog.showOpenDialog(mainWindow!, {
+    properties: ['openDirectory'],
+    title: 'Open Workspace',
+  })
+  if (result.canceled || !result.filePaths.length) return null
+  return result.filePaths[0]
+})
+
+ipcMain.handle('dialog:createFolder', async (_e, name: string) => {
+  const result = await dialog.showOpenDialog(mainWindow!, {
+    properties: ['openDirectory', 'createDirectory'],
+    title: `Create workspace "${name}"`,
+  })
+  if (result.canceled || !result.filePaths.length) return null
+  const basePath = result.filePaths[0]
+  const fullPath = path.join(basePath, name)
+  try {
+    require('fs').mkdirSync(fullPath, { recursive: true })
+    return fullPath
+  } catch { return null }
+})
 
 ipcMain.handle('update:check', () => { autoUpdater.checkForUpdates() })
 ipcMain.handle('update:download', () => { autoUpdater.downloadUpdate() })

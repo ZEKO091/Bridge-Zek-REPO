@@ -21,6 +21,8 @@ interface ElectronAPI {
   onSystemTools: (callback: (tools: DetectedTool[]) => void) => () => void
   getSystemTools: () => Promise<DetectedTool[]>
   runShell: (cmd: string) => Promise<string>
+  openFolderDialog: () => Promise<string | null>
+  createFolderDialog: (name: string) => Promise<string | null>
   checkUpdate: () => Promise<void>
   downloadUpdate: () => Promise<void>
   installUpdate: () => Promise<void>

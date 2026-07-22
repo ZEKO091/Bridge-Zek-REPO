@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSystemStore } from '../store/systemStore'
 import { useAppStore } from '../store/appStore'
+import { useWorkspaceStore } from '../store/workspaceStore'
 
 export default function TopBar() {
   const cpu = useSystemStore((s) => s.cpu)
@@ -11,6 +12,8 @@ export default function TopBar() {
   const ramTotal = useSystemStore((s) => s.ramTotal)
   const setMetrics = useSystemStore((s) => s.setMetrics)
   const notify = useAppStore((s) => s.notify)
+  const current = useWorkspaceStore((s) => s.current)
+  const closeWorkspace = useWorkspaceStore((s) => s.closeWorkspace)
 
   const inputRef = useRef<HTMLInputElement>(null)
   const [query, setQuery] = useState('')
@@ -54,9 +57,11 @@ export default function TopBar() {
   return (
     <div className="top-bar">
       <div className="top-bar-left">
-        <div className="top-bar-workspace" onClick={() => notify('Bridge Lab - ZEK BRIDGE')} style={{ cursor: 'pointer' }}>
-          <span className="top-bar-icon">◇</span>
-          <span>Bridge Lab</span>
+        <div className="top-bar-workspace">
+          <span className="top-bar-icon">▦</span>
+          <span className="ws-name">{current?.name || 'Bridge Lab'}</span>
+          <span className="ws-badge" title={current?.path}>WS</span>
+          <button className="ws-close" onClick={closeWorkspace} title="Close workspace">✕</button>
         </div>
         <div className="top-bar-model" onClick={() => notify(`GPU: ${gpuName}`)} style={{ cursor: 'pointer' }}>
           <span className="model-dot" />
