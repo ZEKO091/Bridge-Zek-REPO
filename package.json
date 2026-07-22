@@ -1,6 +1,6 @@
 {
   "name": "zek-bridge",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "ZEK BRIDGE - Futuristic AI Terminal Workspace",
   "author": "ZEKO",
   "main": "dist-electron/main.js",
@@ -82,4 +82,5 @@
     "wait-on": "^7.2.0"
   }
 }
+
 
