@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import { useTerminalStore } from '../store/terminalStore'
+import { useSystemStore } from '../store/systemStore'
 import * as I from './Icons'
 
 export default function MainMenu() {
@@ -8,6 +9,13 @@ export default function MainMenu() {
   const [projectName, setProjectName] = useState('')
   const [termCount, setTermCount] = useState(2)
   const recent = useWorkspaceStore((s) => s.recent)
+  const tools = useSystemStore((s) => s.tools)
+  const setTools = useSystemStore((s) => s.setTools)
+
+  useEffect(() => {
+    window.electronAPI.getSystemTools().then(setTools)
+    return window.electronAPI.onSystemTools(setTools)
+  }, [])
   const setWorkspace = useWorkspaceStore((s) => s.setWorkspace)
   const addTerminal = useTerminalStore((s) => s.addTerminal)
 
@@ -119,6 +127,18 @@ export default function MainMenu() {
               >
                 Create Workspace ({termCount} terminals)
               </button>
+            </div>
+          </div>
+
+          <div className="main-menu-tools">
+            <h3>Detected Agents & Tools</h3>
+            <div className="main-menu-tools-grid">
+              {tools.filter(t => t.installed).map(t => (
+                <span key={t.name} className="main-menu-tool installed">{t.name}</span>
+              ))}
+              {tools.filter(t => !t.installed).slice(0, 4).map(t => (
+                <span key={t.name} className="main-menu-tool missing">{t.name}</span>
+              ))}
             </div>
           </div>
 
