@@ -12,7 +12,7 @@ export default function UpdateNotification() {
   useEffect(() => {
     return window.electronAPI.onUpdateStatus((s) => {
       if (s === 'checking') setState('checking')
-      if (s === 'up-to-date') { setState('up-to-date'); setTimeout(() => setState('idle'), 1500) }
+      if (s === 'up-to-date') setState('idle') // silent
     })
   }, [])
 
@@ -63,7 +63,6 @@ export default function UpdateNotification() {
             <button className="update-btn dismiss" onClick={() => setState('idle')}>Later</button>
           </>
         )}
-        {state === 'up-to-date' && <><I.IconCheck size={14} className="update-icon" /> ZEK BRIDGE is up to date</>}
         {state === 'error' && (
           <>
             <I.IconClose size={14} className="update-icon error" />
