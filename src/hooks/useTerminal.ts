@@ -18,8 +18,10 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
       cursorBlink: true,
       cursorStyle: 'bar',
       fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace",
-      fontSize: 13,
-      lineHeight: 1.2,
+      fontSize: 12,
+      lineHeight: 1.3,
+      cols: 80,
+      rows: 20,
       theme: {
         background: '#0A0B10', foreground: '#D9E4F2', cursor: '#00E5FF',
         cursorAccent: '#050608', selectionBackground: '#3B82F640',
@@ -37,7 +39,9 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
     fitAddonRef.current = fitAddon
 
     term.open(containerRef.current)
-    setTimeout(() => fitAddon.fit(), 50)
+    const fit = () => { try { fitAddon.fit() } catch {} }
+    setTimeout(fit, 100)
+    setTimeout(fit, 500)
 
     const handleResize = () => fitAddon.fit()
     window.addEventListener('resize', handleResize)
