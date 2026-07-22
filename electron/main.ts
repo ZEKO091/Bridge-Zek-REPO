@@ -146,6 +146,7 @@ function createWindow() {
     frame: false,
     transparent: true,
     backgroundColor: '#050608',
+    icon: path.join(__dirname, '..', 'public', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
