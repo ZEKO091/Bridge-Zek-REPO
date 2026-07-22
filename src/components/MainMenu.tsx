@@ -66,7 +66,7 @@ export default function MainMenu() {
                 <div className="mm-path-input-row">
                   <input
                     className="mm-input path"
-                    placeholder="C:\Users\ianda\Projects"
+                    placeholder="C:\Users\YourName\Projects"
                     value={parentDir}
                     onChange={(e) => setParentDir(e.target.value)}
                   />

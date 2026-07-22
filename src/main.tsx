@@ -18,7 +18,7 @@ if (!window.electronAPI) {
         if (cb) {
           cb.data('Windows PowerShell\r\nCopyright (C) Microsoft Corporation. All rights reserved.\r\n\r\n')
           cb.stats({ ram: Math.round(Math.random() * 200 + 20) })
-          setTimeout(() => cb.data('PS C:\\Users\\ianda> '), 100)
+          setTimeout(() => cb.data('PS C:\\Users\\User> '), 100)
         }
       }, 300)
       return id
