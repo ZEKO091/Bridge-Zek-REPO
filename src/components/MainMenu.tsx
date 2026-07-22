@@ -32,14 +32,24 @@ export default function MainMenu() {
   const openWS = async (path: string, name: string, count = 2) => {
     setWorkspace({ path, name, openedAt: Date.now() }, count)
     closeMenu()
+    // Create terminals directly
+    for (let i = 0; i < count; i++) {
+      try { const id = await window.electronAPI.createTerminal(); addTerminal(id) } catch {}
+    }
   }
 
   const handleCreate = async () => {
     const name = projectName.trim() || 'my-project'
     const parent = parentDir || (await window.electronAPI.pickParentFolder())
-    if (!parent) return
+    if (!parent) { alert('Select a parent directory'); return }
     const folder = await window.electronAPI.createFolderAt(parent, name)
-    if (folder) { openWS(folder, name, termCount); setShowCreate(false) }
+    if (folder) { 
+      setShowCreate(false)
+      // Small delay to let modal close before workspace opens
+      setTimeout(() => openWS(folder, name, termCount), 100)
+    } else {
+      alert('Failed to create folder. Check the path and try again.')
+    }
   }
 
   const cards = [
