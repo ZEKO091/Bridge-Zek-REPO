@@ -1,4 +1,5 @@
 import DetectedTools from './DetectedTools'
+import VoiceAgent from './VoiceAgent'
 import { useTerminalStore } from '../store/terminalStore'
 import * as I from './Icons'
 
@@ -43,33 +44,26 @@ export default function AIPanel() {
             ))}
           </div>
         </div>
+        <VoiceAgent />
         <div className="ai-section">
           <div className="ai-section-title">
-            <span className="ai-section-icon">☰</span>
+            <I.IconModel size={14} className="ai-section-icon" />
             <span>System Info</span>
           </div>
           <div className="system-info-list">
-            <div className="sys-info-item" title={`Platform: ${navigator.platform}`}>
+            <div className="sys-info-item">
               <span className="sys-info-label">Platform</span>
               <span className="sys-info-value">{navigator.platform}</span>
             </div>
-            <div className="sys-info-item" title={`CPU Cores: ${navigator.hardwareConcurrency}`}>
+            <div className="sys-info-item">
               <span className="sys-info-label">Cores</span>
               <span className="sys-info-value">{navigator.hardwareConcurrency || '—'}</span>
             </div>
-            <div className="sys-info-item" title={`Architecture: ${navigator.userAgent.includes('x64') ? 'x64' : 'unknown'}`}>
+            <div className="sys-info-item">
               <span className="sys-info-label">Arch</span>
               <span className="sys-info-value">{navigator.userAgent.includes('x64') ? 'x64' : '—'}</span>
             </div>
           </div>
-        </div>
-        <div className="ai-section">
-          <div className="ai-section-title" style={{ cursor: 'pointer' }} onClick={() => runCommand('help')}>
-            <I.IconRestart size={14} className="ai-section-icon" />
-            <span>Run Command</span>
-            <I.IconArrow size={12} style={{ marginLeft: 'auto' }} />
-          </div>
-          <div className="ai-queue-empty">Use Quick Launch or Ctrl+K search bar</div>
         </div>
       </div>
     </div>

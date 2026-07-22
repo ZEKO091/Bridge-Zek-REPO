@@ -77,4 +77,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getFileInfo: (p: string) => ipcRenderer.invoke('fs:getInfo', p),
   saveTerminalHistory: (wsPath: string, termId: string, data: string) => ipcRenderer.invoke('fs:saveTerminalHistory', wsPath, termId, data),
   loadTerminalHistory: (wsPath: string, termId: string) => ipcRenderer.invoke('fs:loadTerminalHistory', wsPath, termId),
+  voiceStart: () => ipcRenderer.invoke('voice:start'),
+  voiceStop: () => ipcRenderer.invoke('voice:stop'),
+  voiceStatus: () => ipcRenderer.invoke('voice:status'),
+  onVoiceLog: (cb: (msg: string) => void) => { const h = (_e: any, m: string) => cb(m); ipcRenderer.on('voice:log', h); return () => ipcRenderer.removeListener('voice:log', h) },
+  onVoiceStopped: (cb: () => void) => { const h = () => cb(); ipcRenderer.on('voice:stopped', h); return () => ipcRenderer.removeListener('voice:stopped', h) },
 })

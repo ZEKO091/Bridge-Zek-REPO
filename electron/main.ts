@@ -375,6 +375,32 @@ ipcMain.handle('update:check', () => { autoUpdater.checkForUpdates() })
 ipcMain.handle('update:download', () => { autoUpdater.downloadUpdate() })
 ipcMain.handle('update:install', () => { autoUpdater.quitAndInstall() })
 
+// ── Voice Agent ──
+let voiceProcess: any = null
+
+ipcMain.handle('voice:start', async () => {
+  if (voiceProcess) return true
+  const scriptPath = path.join(__dirname, '..', 'python', 'vtt_agent.py')
+  if (!fs.existsSync(scriptPath)) return false
+  try {
+    voiceProcess = spawn('python', [scriptPath], { windowsHide: true, stdio: 'pipe' })
+    voiceProcess.stdout?.on('data', (d: Buffer) => mainWindow?.webContents.send('voice:log', d.toString()))
+    voiceProcess.stderr?.on('data', (d: Buffer) => mainWindow?.webContents.send('voice:log', d.toString()))
+    voiceProcess.on('close', () => { voiceProcess = null; mainWindow?.webContents.send('voice:stopped') })
+    return true
+  } catch { return false }
+})
+
+ipcMain.handle('voice:stop', () => {
+  if (voiceProcess) {
+    try { voiceProcess.kill() } catch {}
+    voiceProcess = null
+  }
+  return true
+})
+
+ipcMain.handle('voice:status', () => voiceProcess !== null)
+
 ipcMain.handle('shell:run', async (_e, cmd: string) => {
   return new Promise<string>((resolve) => {
     const child = spawn('cmd', ['/c', cmd], { windowsHide: true, timeout: 10000 })

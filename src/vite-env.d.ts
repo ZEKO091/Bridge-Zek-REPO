@@ -39,6 +39,11 @@ interface ElectronAPI {
   getFileInfo: (p: string) => Promise<{ size: number; isDirectory: boolean; modified: number } | null>
   saveTerminalHistory: (wsPath: string, termId: string, data: string) => Promise<boolean>
   loadTerminalHistory: (wsPath: string, termId: string) => Promise<string | null>
+  voiceStart: () => Promise<boolean>
+  voiceStop: () => Promise<boolean>
+  voiceStatus: () => Promise<boolean>
+  onVoiceLog: (cb: (msg: string) => void) => () => void
+  onVoiceStopped: (cb: () => void) => () => void
 }
 
 interface DirEntry { name: string; isDirectory: boolean; isFile: boolean; size: number }

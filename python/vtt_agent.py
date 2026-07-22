@@ -1,139 +1,121 @@
-import json
-import sys
-import os
-import tempfile
-import wave
-import threading
-import time
-import numpy as np
+import json, sys, os, time, threading, numpy as np
+from pynput import keyboard
+
+os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
 
 try:
     import sounddevice as sd
 except Exception as e:
-    print(json.dumps({"error": f"sounddevice: {e}"}))
-    sys.exit(1)
+    print(f"[VTT] Error: sounddevice — {e}", file=sys.stderr); sys.exit(1)
 
 try:
     from faster_whisper import WhisperModel
 except Exception as e:
-    print(json.dumps({"error": f"faster-whisper: {e}"}))
-    sys.exit(1)
+    print(f"[VTT] Error: faster-whisper — {e}", file=sys.stderr); sys.exit(1)
 
-MODEL_SIZE = os.environ.get("WHISPER_MODEL", "tiny")
-RECORD_TIMEOUT = float(os.environ.get("VTT_TIMEOUT", "30"))
+try:
+    import pyautogui
+except Exception as e:
+    print(f"[VTT] Error: pyautogui — {e}", file=sys.stderr); sys.exit(1)
+
+MODEL = os.environ.get("WHISPER_MODEL", "tiny")
+SAMPLE_RATE = 16000
+USE_CUDA = os.environ.get("VTT_GPU", "").lower() in ("1", "true", "yes")
 
 model = None
 recording = False
 audio_data = []
-sample_rate = 16000
 stream = None
+ctrl_pressed = False
 
-def ensure_model():
+def load_model():
     global model
-    if model is not None:
-        return
-    device = "cuda" if os.environ.get("VTT_GPU", "1") == "1" else "cpu"
-    compute_type = "float16" if device == "cuda" else "int8"
-    model = WhisperModel(MODEL_SIZE, device=device, compute_type=compute_type)
-
-def audio_callback(indata, frames, time_info, status):
-    if recording:
-        audio_data.append(indata.copy())
+    if model: return
+    device = "cuda" if USE_CUDA else "cpu"
+    print(f"[VTT] Loading {MODEL} ({device})...", file=sys.stderr)
+    model = WhisperModel(MODEL, device=device, compute_type="float16" if device == "cuda" else "int8")
+    print(f"[VTT] Model ready", file=sys.stderr)
 
 def start_recording():
     global recording, audio_data, stream
-    if recording:
-        return {"status": "already_recording"}
-    audio_data = []
-    recording = True
-    try:
-        stream = sd.InputStream(
-            samplerate=sample_rate,
-            channels=1,
-            dtype=np.float32,
-            callback=audio_callback
-        )
-        stream.start()
-        return {"status": "recording"}
-    except Exception as e:
-        recording = False
-        return {"error": f"Failed to start recording: {e}"}
+    if recording: return
+    audio_data = []; recording = True
+    def cb(indata, frames, time_info, status):
+        if recording: audio_data.append(indata.copy())
+    stream = sd.InputStream(samplerate=SAMPLE_RATE, channels=1, dtype=np.float32, callback=cb)
+    stream.start()
 
 def stop_recording():
     global recording, stream
-    if not recording:
-        return {"error": "not_recording"}
+    if not recording: return ""
     recording = False
     if stream:
-        stream.stop()
-        stream.close()
+        try: stream.stop(); stream.close()
+        except: pass
         stream = None
-    if not audio_data:
-        return {"text": ""}
+    if not audio_data: return ""
+    audio = np.concatenate(audio_data, axis=0).flatten()
+    load_model()
+    segments, _ = model.transcribe(audio, beam_size=5, language="es")
+    return " ".join(s.text.strip() for s in segments)
+
+def type_text(text):
+    text = text.strip()
+    if not text: return
+    time.sleep(0.05)
     try:
-        audio_np = np.concatenate(audio_data, axis=0).flatten()
-        ensure_model()
-        segments, info = model.transcribe(audio_np, beam_size=5, language="es")
-        text_parts = []
-        for seg in segments:
-            text_parts.append(seg.text.strip())
-        text = " ".join(text_parts)
-        return {"text": text, "duration": f"{info.duration:.1f}s" if info.duration else ""}
+        pyautogui.typewrite(text, interval=0.01)
+        pyautogui.press("enter")
     except Exception as e:
-        return {"error": f"Transcription failed: {e}"}
+        print(f"[VTT] Error typing: {e}", file=sys.stderr)
+
+def on_press(key):
+    global ctrl_pressed, recording
+    try:
+        if key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
+            ctrl_pressed = True
+        elif key == keyboard.Key.space and ctrl_pressed and not recording:
+            print("[VTT] Recording...", file=sys.stderr)
+            start_recording()
+    except: pass
+
+def on_release(key):
+    global ctrl_pressed, recording
+    try:
+        if key == keyboard.Key.ctrl_l or key == keyboard.Key.ctrl_r:
+            ctrl_pressed = False
+        elif key == keyboard.Key.space and recording:
+            print("[VTT] Transcribing...", file=sys.stderr)
+            text = stop_recording()
+            if text:
+                print(f"[VTT] {text}", file=sys.stderr)
+                type_text(text)
+            else:
+                print("[VTT] No speech detected", file=sys.stderr)
+    except: pass
 
 def main():
-    if len(sys.argv) > 1 and sys.argv[1] == "ping":
-        try:
-            sd.check_input_settings()
-            print(json.dumps({"status": "ready", "devices": sd.query_devices()}))
-        except Exception as e:
-            print(json.dumps({"status": "error", "error": str(e)}))
-        return
-
-    if len(sys.argv) > 1 and sys.argv[1] == "record":
-        duration = float(sys.argv[2]) if len(sys.argv) > 2 else 5.0
-        try:
-            audio = sd.rec(int(duration * sample_rate), samplerate=sample_rate, channels=1, dtype=np.float32)
-            sd.wait()
-            ensure_model()
-            audio_flat = audio.flatten()
-            segments, info = model.transcribe(audio_flat, beam_size=5, language="es")
-            text = " ".join(seg.text.strip() for seg in segments)
-            print(json.dumps({"text": text, "duration": f"{info.duration:.1f}s" if info.duration else f"{duration:.1f}s"}))
-        except Exception as e:
-            print(json.dumps({"error": str(e)}))
-        return
-
+    print("[VTT] Zek Bridge Voice — Ctrl+Space to talk", file=sys.stderr)
+    print("[VTT] Checking microphones...", file=sys.stderr)
     try:
-        ensure_model()
-        print(json.dumps({"status": "ready", "model": MODEL_SIZE}))
-        sys.stdout.flush()
+        devices = [d["name"] for d in sd.query_devices() if d["max_input_channels"] > 0]
+        print(f"[VTT] {len(devices)} mic(s) found", file=sys.stderr)
     except Exception as e:
-        print(json.dumps({"error": f"Model load failed: {e}"}))
+        print(f"[VTT] No mic: {e}", file=sys.stderr)
         sys.exit(1)
 
-    for line in sys.stdin:
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            cmd = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        action = cmd.get("action")
-        result = None
-        if action == "start":
-            result = start_recording()
-        elif action == "stop":
-            result = stop_recording()
-        elif action == "quit":
-            break
-        else:
-            result = {"error": f"unknown_action: {action}"}
-        if result:
-            print(json.dumps(result))
-            sys.stdout.flush()
+    if len(sys.argv) > 1 and sys.argv[1] == "record":
+        dur = float(sys.argv[2]) if len(sys.argv) > 2 else 5.0
+        audio = sd.rec(int(dur * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=1, dtype=np.float32); sd.wait()
+        load_model()
+        text = " ".join(s.text.strip() for s in model.transcribe(audio.flatten(), beam_size=5, language="es")[0])
+        print(json.dumps({"text": text}))
+        return
+
+    listener = keyboard.Listener(on_press=on_press, on_release=on_release)
+    listener.start()
+    print("[VTT] Ready. Hold Ctrl+Space to speak.", file=sys.stderr)
+    listener.join()
 
 if __name__ == "__main__":
     main()
