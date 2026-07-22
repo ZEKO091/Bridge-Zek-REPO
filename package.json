@@ -35,7 +35,8 @@
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
-      "node_modules/**/*"
+      "node_modules/**/*",
+      "public/**/*"
     ],
     "win": {
       "target": [
@@ -46,7 +47,7 @@
           ]
         }
       ],
-      "icon": null,
+      "icon": "public/icon.png",
       "certificateSubjectName": null,
       "certificateSha1": null
     },

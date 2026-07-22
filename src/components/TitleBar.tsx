@@ -3,7 +3,7 @@ export default function TitleBar() {
     <div className="title-bar">
       <div className="title-bar-drag">
         <div className="title-bar-brand">
-          <div className="title-bar-logo" />
+          <img src="/icon.png" className="title-bar-logo" alt="" style={{objectFit:'cover'}} />
           <span className="title-bar-text">ZEK BRIDGE</span>
           <span className="title-bar-version">v1.0.1</span>
         </div>
