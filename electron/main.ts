@@ -260,7 +260,7 @@ app.whenReady().then(async () => {
       procRAM,
       cores: cpuCores,
     })
-  }, 2000)
+  }, 5000)
 })
 
 app.on('window-all-closed', () => {

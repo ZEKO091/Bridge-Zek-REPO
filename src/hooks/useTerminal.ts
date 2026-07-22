@@ -78,7 +78,7 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
 
     const autoSave = setInterval(() => {
       if (!pausedRef.current) saveBuffer()
-    }, 10000)
+    }, 30000)
 
     const exitCleanup = window.electronAPI.onTerminalExit(terminalId, () => {
       saveBuffer()
