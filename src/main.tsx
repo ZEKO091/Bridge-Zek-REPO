@@ -29,7 +29,7 @@ if (!window.electronAPI) {
     },
     writeToTerminal: async () => {},
     resizeTerminal: async () => {},
-    killTerminal: async (id) => { termCbs.delete(id); const cb = termCbs.get(id); cb?.exit() },
+    killTerminal: async (id) => { const cb = termCbs.get(id); if (cb) cb.exit(); termCbs.delete(id) },
     onTerminalData: (id, cb) => { if (!termCbs.has(id)) termCbs.set(id, { data: cb, exit: () => {}, stats: () => {} }); const e = termCbs.get(id)!; e.data = cb; return () => {} },
     onTerminalExit: (id, cb) => { if (!termCbs.has(id)) termCbs.set(id, { data: () => {}, exit: cb, stats: () => {} }); const e = termCbs.get(id)!; e.exit = cb; return () => {} },
     onTerminalStats: (id, cb) => { if (!termCbs.has(id)) termCbs.set(id, { data: () => {}, exit: () => {}, stats: cb }); const e = termCbs.get(id)!; e.stats = cb; return () => {} },

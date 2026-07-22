@@ -3,6 +3,7 @@ import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import { useTerminalStore } from '../store/terminalStore'
 import { useWorkspaceStore } from '../store/workspaceStore'
+import { playNotification } from '../lib/sound'
 
 let fontLoaded = false
 const FONT_FAMILY = "'JetBrains Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace"
@@ -110,7 +111,7 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
     const autoSave = setInterval(() => { if (!pausedRef.current) saveBuffer() }, 30000)
 
     const exitCleanup = window.electronAPI.onTerminalExit(terminalId, () => {
-      saveBuffer(); updateTerminal(terminalId, { status: 'stopped' })
+      saveBuffer(); updateTerminal(terminalId, { status: 'stopped' }); playNotification()
     })
 
     updateTerminal(terminalId, { status: 'running' })
