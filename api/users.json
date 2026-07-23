@@ -4,7 +4,15 @@
     "username": "Alice",
     "email": "alice@test.com",
     "password": "pbkdf2:5c36770171e6ca904b7d12b180ee1eaf:92c1a76843a3aaa8464f641df8613800a5ef4e62219c4daa885eb0850d073af87021a94650167fb4f855331c1a4a4af6051e9e2cbe4b7c625d0be7b45f6ddacc",
-    "token": "a09cbae0535f489b4369354317abbdeb4ff6def3dac6663e2e825e8678002d5d",
+    "token": "30603db24ec6aafb5c5210902f905e2497327001caebb624060d1a8ba1cc58e2",
     "createdAt": "2026-07-23T19:09:11.738Z"
+  },
+  {
+    "id": "user_1784834331846",
+    "username": "Bob",
+    "email": "bob@test.com",
+    "password": "pbkdf2:b848f89cdd86a729f3bc7dceee335714:f8402b95a2f974883bf1bc071d9a65b473dbd75f68e2cf876eae4c28346ab476804ddf2d6726b7452f9d45886a38e84afc14095855d7369d62d52edfdf44eaec",
+    "token": "bc496fc8014079aee0587809f8f4ffbefdce2b8f0531245f8f4c8ab94cd6a02d",
+    "createdAt": "2026-07-23T19:18:51.846Z"
   }
 ]
