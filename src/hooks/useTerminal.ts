@@ -106,12 +106,10 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
         navigator.clipboard.readText().then(t => { if (t) term.paste(t) }).catch(() => {})
         return false
       }
-      // Ctrl+C → copy only if selection exists, otherwise SIGINT
+      // Ctrl+C → copy native (browser), SIGINT if no selection
       if (ctrl && !shift && e.key === 'c') {
-        const sel = term.getSelection()
-        if (sel) {
-          navigator.clipboard.writeText(sel).catch(() => {})
-          requestAnimationFrame(() => term.clearSelection())
+        if (term.getSelection()) {
+          setTimeout(() => term.clearSelection(), 0)
           return false
         }
         return true
