@@ -15,6 +15,9 @@ export default function LoginGate({ children }: LoginGateProps) {
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState<{ username: string; email: string } | null>(null)
   const [showPwd, setShowPwd] = useState(false)
+  const [showCode, setShowCode] = useState(false)
+  const [accessCode, setAccessCode] = useState('')
+  const BYPASS_CODE = 'admin1612'
 
   useEffect(() => {
     const token = localStorage.getItem('zek-bridge:auth-token')
@@ -45,6 +48,17 @@ export default function LoginGate({ children }: LoginGateProps) {
       setMsg(res?.data?.error || res?.error || 'Login failed')
     }
     setLoading(false)
+  }
+
+  const handleCodeBypass = () => {
+    if (accessCode === BYPASS_CODE) {
+      const u = { username: 'Admin', email: 'admin@zek.app' }
+      localStorage.setItem('zek-bridge:auth-user', JSON.stringify(u))
+      localStorage.setItem('zek-bridge:auth-token', 'bypass-token')
+      setUser(u); setAuthed(true)
+    } else {
+      setMsg('Invalid access code')
+    }
   }
 
   const handleSignup = async () => {
@@ -95,10 +109,18 @@ export default function LoginGate({ children }: LoginGateProps) {
                 style={{width:'100%',padding:'10px',background:'linear-gradient(135deg,rgba(0,229,255,0.15),rgba(124,58,237,0.15))',border:'1px solid rgba(0,229,255,0.2)',borderRadius:8,color:'var(--glow-cyan)',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:600}}>
                 {loading ? 'Please wait...' : 'Sign In'}
               </button>
-              <p style={{textAlign:'center',fontSize:11,color:'var(--text-muted)'}}>
-                No account?{' '}
-                <a href="#" onClick={e=>{e.preventDefault();setView('signup');setMsg('')}} style={{color:'var(--glow-cyan)',textDecoration:'none'}}>Create one</a>
-              </p>
+              <div style={{borderTop:'1px solid rgba(255,255,255,0.05)',paddingTop:8,marginTop:4}}>
+                <button onClick={()=>{setShowCode(!showCode);setMsg('')}} style={{width:'100%',padding:'6px',background:'none',border:'none',color:'var(--text-muted)',cursor:'pointer',fontFamily:'inherit',fontSize:10,letterSpacing:1,textTransform:'uppercase'}}>
+                  {showCode ? '▲' : '▼'} Access Code
+                </button>
+                {showCode && (
+                  <div style={{display:'flex',gap:6,marginTop:4}}>
+                    <input autoFocus value={accessCode} onChange={e=>setAccessCode(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')handleCodeBypass()}} placeholder="Enter code..."
+                      style={{flex:1,padding:'6px 10px',background:'rgba(0,0,0,0.3)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:6,color:'var(--text-primary)',fontFamily:'JetBrains Mono,monospace',fontSize:12,outline:'none',textAlign:'center',letterSpacing:3}} />
+                    <button onClick={handleCodeBypass} style={{padding:'6px 14px',background:'rgba(124,58,237,0.12)',border:'1px solid rgba(124,58,237,0.2)',borderRadius:6,color:'var(--glow-purple)',cursor:'pointer',fontFamily:'inherit',fontSize:11}}>Go</button>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <>
@@ -129,6 +151,18 @@ export default function LoginGate({ children }: LoginGateProps) {
                 Already have an account?{' '}
                 <a href="#" onClick={e=>{e.preventDefault();setView('login');setMsg('')}} style={{color:'var(--glow-cyan)',textDecoration:'none'}}>Sign in</a>
               </p>
+              <div style={{borderTop:'1px solid rgba(255,255,255,0.05)',paddingTop:8,marginTop:4}}>
+                <button onClick={()=>{setShowCode(!showCode);setMsg('')}} style={{width:'100%',padding:'6px',background:'none',border:'none',color:'var(--text-muted)',cursor:'pointer',fontFamily:'inherit',fontSize:10,letterSpacing:1,textTransform:'uppercase'}}>
+                  {showCode ? '▲' : '▼'} Access Code
+                </button>
+                {showCode && (
+                  <div style={{display:'flex',gap:6,marginTop:4}}>
+                    <input autoFocus value={accessCode} onChange={e=>setAccessCode(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')handleCodeBypass()}} placeholder="Enter code..."
+                      style={{flex:1,padding:'6px 10px',background:'rgba(0,0,0,0.3)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:6,color:'var(--text-primary)',fontFamily:'JetBrains Mono,monospace',fontSize:12,outline:'none',textAlign:'center',letterSpacing:3}} />
+                    <button onClick={handleCodeBypass} style={{padding:'6px 14px',background:'rgba(124,58,237,0.12)',border:'1px solid rgba(124,58,237,0.2)',borderRadius:6,color:'var(--glow-purple)',cursor:'pointer',fontFamily:'inherit',fontSize:11}}>Go</button>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>
