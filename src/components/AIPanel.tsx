@@ -1,5 +1,6 @@
 import DetectedTools from './DetectedTools'
 import SubWorkspacePanel from './SubWorkspacePanel'
+import AuthPanel from './AuthPanel'
 import { useTerminalStore, canAddTerminal, notifyMaxTerminals } from '../store/terminalStore'
 import { useWorkspaceStore } from '../store/workspaceStore'
 import * as I from './Icons'
@@ -31,6 +32,7 @@ export default function AIPanel() {
         </div>
       </div>
       <div className="ai-panel-content">
+        <AuthPanel />
         <div className="ai-section" style={{padding:0,background:'none',border:'none'}}>
           <SubWorkspacePanel />
         </div>

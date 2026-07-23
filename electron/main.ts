@@ -406,6 +406,24 @@ ipcMain.handle('update:check', () => { autoUpdater.checkForUpdates() })
 ipcMain.handle('update:download', () => { autoUpdater.downloadUpdate() })
 ipcMain.handle('update:install', () => { autoUpdater.quitAndInstall() })
 
+// ── Auth ──
+const auth = path.join(__dirname, 'webSyncService.js')
+let authApi: any = null
+try { authApi = require(auth) } catch { console.warn('Auth service not available') }
+
+ipcMain.handle('auth:signup', async (_e, username: string, email: string, password: string) => {
+  if (!authApi) return { ok: false, data: { error: 'Auth server not available' } }
+  return authApi.signup(username, email, password)
+})
+ipcMain.handle('auth:login', async (_e, email: string, password: string) => {
+  if (!authApi) return { ok: false, data: { error: 'Auth server not available' } }
+  return authApi.login(email, password)
+})
+ipcMain.handle('auth:verify', async (_e, token: string) => {
+  if (!authApi) return { ok: false, data: { error: 'Auth server not available' } }
+  return authApi.verifySession(token)
+})
+
 ipcMain.handle('shell:run', async (_e, cmd: string) => {
   return new Promise<string>((resolve) => {
     const child = spawn('cmd', ['/c', cmd], { windowsHide: true, timeout: 10000 })

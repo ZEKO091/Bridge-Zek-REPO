@@ -42,6 +42,9 @@ interface ElectronAPI {
   wsSave: (key: string, data: any) => Promise<boolean>
   wsLoad: (key: string) => Promise<any>
   wsDelete: (key: string) => Promise<boolean>
+  authSignup: (username: string, email: string, password: string) => Promise<any>
+  authLogin: (email: string, password: string) => Promise<any>
+  authVerify: (token: string) => Promise<any>
 }
 
 interface DirEntry { name: string; isDirectory: boolean; isFile: boolean; size: number }

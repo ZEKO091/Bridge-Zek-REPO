@@ -80,4 +80,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   wsSave: (key: string, data: any) => ipcRenderer.invoke('ws:save', key, data),
   wsLoad: (key: string) => ipcRenderer.invoke('ws:load', key),
   wsDelete: (key: string) => ipcRenderer.invoke('ws:delete', key),
+  // ── Auth ──
+  authSignup: (username: string, email: string, password: string) => ipcRenderer.invoke('auth:signup', username, email, password),
+  authLogin: (email: string, password: string) => ipcRenderer.invoke('auth:login', email, password),
+  authVerify: (token: string) => ipcRenderer.invoke('auth:verify', token),
 })
