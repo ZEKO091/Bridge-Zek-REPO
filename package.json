@@ -1,6 +1,6 @@
 {
   "name": "zek-bridge",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "ZEK BRIDGE - Futuristic AI Terminal Workspace",
   "author": "ZEKO",
   "main": "dist-electron/main.js",
@@ -16,7 +16,9 @@
     "electron:build": "npm run build && electron-builder --win --x64"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "electron-updater": "^6.8.9",
+    "express": "^4.18.2",
     "lucide-react": "^0.400.0",
     "node-pty": "^1.0.0",
     "react": "^18.3.1",

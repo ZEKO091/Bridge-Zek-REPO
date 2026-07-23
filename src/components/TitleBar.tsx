@@ -5,7 +5,7 @@ export default function TitleBar() {
         <div className="title-bar-brand">
           <img src="/icon.png" className="title-bar-logo" alt="" style={{objectFit:'cover'}} />
           <span className="title-bar-text">ZEK BRIDGE</span>
-          <span className="title-bar-version">v1.2.1</span>
+          <span className="title-bar-version">v1.2.2</span>
         </div>
       </div>
       <div className="title-bar-actions">
@@ -22,6 +22,7 @@ export default function TitleBar() {
     </div>
   )
 }
+
 
 
 

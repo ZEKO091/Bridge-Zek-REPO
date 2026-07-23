@@ -11,16 +11,27 @@ try { nodePty = require('node-pty') } catch { console.warn('node-pty failed to l
 // ── Auto-start auth server ──
 let authServer: any = null
 ;(function startAuthServer() {
+  // In packaged app: __dirname = resources/app/dist-electron
+  // Dev: __dirname = dist-electron
   const serverPath = path.join(__dirname, '..', 'server', 'server.js')
-  if (fs.existsSync(serverPath)) {
+  const serverAltPath = path.join(app.getAppPath(), 'server', 'server.js')
+  const actualPath = fs.existsSync(serverPath) ? serverPath : (fs.existsSync(serverAltPath) ? serverAltPath : null)
+  if (actualPath) {
     try {
-      authServer = spawn('node', [serverPath], { windowsHide: true, stdio: 'pipe', cwd: path.dirname(serverPath) })
-      console.log('Auth server started')
+      const userDataDir = app.getPath('userData')
+      try { fs.mkdirSync(userDataDir, { recursive: true }) } catch {}
+      authServer = spawn('node', [actualPath], {
+        windowsHide: true,
+        stdio: 'pipe',
+        cwd: path.dirname(actualPath),
+        env: { ...process.env, ZEK_BRIDGE_DATA_DIR: userDataDir }
+      })
+      console.log('Auth server started at', actualPath, '(data dir:', userDataDir, ')')
       authServer.stdout?.on('data', (d: Buffer) => console.log('[auth]', d.toString().trim()))
       authServer.stderr?.on('data', (d: Buffer) => console.error('[auth]', d.toString().trim()))
     } catch (e) { console.warn('Failed to start auth server:', e) }
   } else {
-    console.warn('Auth server script not found at', serverPath)
+    console.warn('Auth server script not found (tried', serverPath, 'and', serverAltPath, ')')
   }
 })()
 
