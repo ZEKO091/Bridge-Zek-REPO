@@ -1,4 +1,5 @@
 import DetectedTools from './DetectedTools'
+import SubWorkspacePanel from './SubWorkspacePanel'
 import { useTerminalStore, canAddTerminal, notifyMaxTerminals } from '../store/terminalStore'
 import * as I from './Icons'
 
@@ -28,6 +29,9 @@ export default function AIPanel() {
         </div>
       </div>
       <div className="ai-panel-content">
+        <div className="ai-section" style={{padding:0,background:'none',border:'none'}}>
+          <SubWorkspacePanel />
+        </div>
         <div className="ai-section">
           <DetectedTools />
         </div>

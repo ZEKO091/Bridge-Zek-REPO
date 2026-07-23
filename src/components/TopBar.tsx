@@ -3,7 +3,7 @@ import { useSystemStore } from '../store/systemStore'
 import { useAppStore } from '../store/appStore'
 import { useTerminalStore, canAddTerminal, notifyMaxTerminals, MAX_TERMINALS } from '../store/terminalStore'
 import { useWorkspaceStore, SubWorkspace } from '../store/workspaceStore'
-import SubWorkspacePanel from './SubWorkspacePanel'
+
 import * as I from './Icons'
 
 export default function TopBar() {
@@ -68,7 +68,6 @@ export default function TopBar() {
           <span className="ws-badge" title={current?.path}>●</span>
           <button className="ws-close" onClick={closeWorkspace} title="Close workspace">✕</button>
         </div>
-        <SubWorkspacePanel />
         <div className="top-bar-model" onClick={() => notify(`GPU: ${gpuName}`)} style={{ cursor: 'pointer' }}>
           <span className="model-dot" />
           <span>{gpuName.includes('Unknown') ? 'Local Machine' : gpuName.slice(0, 20)}</span>
