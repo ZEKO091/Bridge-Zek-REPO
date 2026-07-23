@@ -8,32 +8,77 @@ import { autoUpdater } from 'electron-updater'
 let nodePty: any = null
 try { nodePty = require('node-pty') } catch { console.warn('node-pty failed to load. Terminals fallback mode.') }
 
-// ── Auto-start auth server ──
-let authServer: any = null
-;(function startAuthServer() {
-  // In packaged app: __dirname = resources/app/dist-electron
-  // Dev: __dirname = dist-electron
-  const serverPath = path.join(__dirname, '..', 'server', 'server.js')
-  const serverAltPath = path.join(app.getAppPath(), 'server', 'server.js')
-  const actualPath = fs.existsSync(serverPath) ? serverPath : (fs.existsSync(serverAltPath) ? serverAltPath : null)
-  if (actualPath) {
-    try {
-      const userDataDir = app.getPath('userData')
-      try { fs.mkdirSync(userDataDir, { recursive: true }) } catch {}
-      authServer = spawn('node', [actualPath], {
-        windowsHide: true,
-        stdio: 'pipe',
-        cwd: path.dirname(actualPath),
-        env: { ...process.env, ZEK_BRIDGE_DATA_DIR: userDataDir }
-      })
-      console.log('Auth server started at', actualPath, '(data dir:', userDataDir, ')')
-      authServer.stdout?.on('data', (d: Buffer) => console.log('[auth]', d.toString().trim()))
-      authServer.stderr?.on('data', (d: Buffer) => console.error('[auth]', d.toString().trim()))
-    } catch (e) { console.warn('Failed to start auth server:', e) }
-  } else {
-    console.warn('Auth server script not found (tried', serverPath, 'and', serverAltPath, ')')
+// ── Inline auth server (Express) ──
+const crypto = require('crypto')
+function startAuthServer() {
+  const express = require('express')
+  const cors = require('cors')
+  const DATA_DIR = app.getPath('userData')
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }) } catch {}
+  const DB_PATH = path.join(DATA_DIR, 'users.json')
+  if (!fs.existsSync(DB_PATH)) fs.writeFileSync(DB_PATH, '[]', 'utf-8')
+
+  function loadUsers() {
+    try { return JSON.parse(fs.readFileSync(DB_PATH, 'utf-8')) } catch { return [] }
   }
-})()
+  function saveUsers(users: any) {
+    fs.writeFileSync(DB_PATH, JSON.stringify(users, null, 2), 'utf-8')
+  }
+  function generateToken() {
+    return crypto.randomBytes(32).toString('hex')
+  }
+
+  const srv = express()
+  srv.use(cors({ origin: '*' }))
+  srv.use(express.json())
+
+  srv.post('/api/signup', (req: any, res: any) => {
+    const { username, email, password } = req.body
+    if (!username || !email || !password) return res.status(400).json({ error: 'Username, email and password required' })
+    const users = loadUsers()
+    if (users.find((u: any) => u.email === email)) return res.status(409).json({ error: 'An account with this email already exists' })
+    const hash = crypto.createHash('sha256').update(password).digest('hex')
+    const token = generateToken()
+    const user = { id: `user_${Date.now()}`, username, email, password: hash, token, createdAt: new Date().toISOString() }
+    users.push(user); saveUsers(users)
+    res.json({ ok: true, token, user: { id: user.id, username: user.username, email: user.email } })
+  })
+
+  srv.post('/api/login', (req: any, res: any) => {
+    const { email, password } = req.body
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' })
+    const users = loadUsers()
+    const hash = crypto.createHash('sha256').update(password).digest('hex')
+    const user = users.find((u: any) => u.email === email && u.password === hash)
+    if (!user) return res.status(403).json({ error: 'Account not found in the application database. Please sign up first.' })
+    const token = generateToken()
+    user.token = token; saveUsers(users)
+    res.json({ ok: true, token, user: { id: user.id, username: user.username, email: user.email } })
+  })
+
+  srv.post('/api/verify-session', (req: any, res: any) => {
+    const authHeader = req.headers.authorization
+    const token = authHeader && authHeader.split(' ')[1]
+    if (!token) return res.status(401).json({ error: 'Token not provided' })
+    const users = loadUsers()
+    const user = users.find((u: any) => u.token === token)
+    if (!user) return res.status(403).json({ error: 'Account does not exist or has been disabled in the application database.' })
+    res.json({ valid: true, user: { id: user.id, username: user.username, email: user.email } })
+  })
+
+  srv.get('/api/user', (req: any, res: any) => {
+    const authHeader = req.headers.authorization
+    const token = authHeader && authHeader.split(' ')[1]
+    if (!token) return res.status(401).json({ error: 'No token' })
+    const users = loadUsers()
+    const user = users.find((u: any) => u.token === token)
+    if (!user) return res.status(403).json({ error: 'User not found' })
+    res.json({ id: user.id, username: user.username, email: user.email })
+  })
+
+  srv.listen(6060, () => console.log('Auth server running on http://localhost:6060 (data:', DB_PATH, ')'))
+}
+startAuthServer()
 
 let mainWindow: BrowserWindow | null = null
 const terminals: Map<string, any> = new Map()
@@ -528,5 +573,4 @@ ipcMain.handle('terminal:kill', (_e, id: string) => {
 })
 
 // ── Cleanup auth server on exit ──
-process.on('exit', () => { if (authServer) { try { authServer.kill() } catch {} } })
-app.on('before-quit', () => { if (authServer) { try { authServer.kill() } catch {} } })
+// Inline Express server auto-closes with the app, no cleanup needed
