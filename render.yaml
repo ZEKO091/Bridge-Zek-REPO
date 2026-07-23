@@ -1,0 +1,11 @@
+﻿services:
+  - type: web
+    name: zek-bridge-auth
+    env: node
+    buildCommand: cd server && npm install
+    startCommand: cd server && node server.js
+    envVars:
+      - key: ZEK_BRIDGE_PORT
+        value: 6061
+      - key: ZEK_BRIDGE_HOST
+        value: 0.0.0.0

@@ -211,23 +211,8 @@ server.on('listening', () => {
 });
 server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-        console.log(`[ZEK BRIDGE API] Port ${PORT} in use, using existing instance`);
+        console.log(`[ZEK BRIDGE API] Port ${PORT} in use (inline server active)`);
         return;
     }
     console.error('[ZEK BRIDGE API] Failed to start:', err);
-});
-
-function shutdown() {
-    console.log('\n[ZEK BRIDGE API] Shutting down...');
-    for (const c of sseClients) {
-        try { c.end() } catch {}
-    }
-    sseClients.clear();
-    server.close(() => process.exit(0));
-}
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
-process.on('uncaughtException', (err) => {
-    console.error('[ZEK BRIDGE API] Uncaught exception:', err);
-    shutdown();
 });

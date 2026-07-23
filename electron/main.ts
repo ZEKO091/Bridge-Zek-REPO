@@ -8,26 +8,162 @@ import { autoUpdater } from 'electron-updater'
 let nodePty: any = null
 try { nodePty = require('node-pty') } catch { console.warn('node-pty failed to load. Terminals fallback mode.') }
 
-// ── ZEK BRIDGE Auth Server (dedicated process) ──
-let apiProcess: any = null
+// ── ZEK BRIDGE API (inline auth server) ──
+const crypto = require('crypto')
 function startAPI() {
-  const serverPath = path.join(__dirname, '..', 'server', 'server.js')
-  if (!fs.existsSync(serverPath)) { console.warn('[AUTH] server.js not found at', serverPath); return }
-  try {
-    const userDataDir = app.getPath('userData')
-    fs.mkdirSync(userDataDir, { recursive: true })
-    apiProcess = spawn('node', [serverPath], {
-      windowsHide: true,
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, ZEK_BRIDGE_DATA_DIR: userDataDir, ZEK_BRIDGE_PORT: '6061' }
+  const DATA_DIR = process.env.ZEK_BRIDGE_DATA_DIR || path.join(__dirname, '..', 'api')
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }) } catch {}
+  const DB_PATH = path.join(DATA_DIR, 'users.json')
+  if (!fs.existsSync(DB_PATH)) fs.writeFileSync(DB_PATH, '[]', 'utf-8')
+
+  function loadUsers() {
+    try { return JSON.parse(fs.readFileSync(DB_PATH, 'utf-8')) } catch { return [] }
+  }
+  function saveUsers(users: any) {
+    fs.writeFileSync(DB_PATH, JSON.stringify(users, null, 2), 'utf-8')
+  }
+  function generateToken() {
+    return crypto.randomBytes(32).toString('hex')
+  }
+  function hashPassword(password: string) {
+    const salt = crypto.randomBytes(16).toString('hex')
+    const key = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex')
+    return 'pbkdf2:' + salt + ':' + key
+  }
+  function verifyPassword(password: string, stored: string) {
+    if (!stored.startsWith('pbkdf2:')) {
+      return crypto.createHash('sha256').update(password).digest('hex') === stored
+    }
+    const parts = stored.split(':')
+    if (parts.length !== 3) return false
+    return crypto.pbkdf2Sync(password, parts[1], 100000, 64, 'sha512').toString('hex') === parts[2]
+  }
+  function isLegacyHash(stored: string) { return !stored.startsWith('pbkdf2:') }
+
+  let dbLock = false
+  const dbQueue: any[] = []
+  function withDB(fn: any) {
+    return new Promise((resolve, reject) => {
+      dbQueue.push({ fn, resolve, reject }); processQueue()
     })
-    apiProcess.stdout?.on('data', (d: Buffer) => console.log('[AUTH]', d.toString().trim()))
-    apiProcess.stderr?.on('data', (d: Buffer) => console.warn('[AUTH]', d.toString().trim()))
-    apiProcess.on('error', (e: any) => console.warn('[AUTH] Failed:', e.message))
-  } catch (e) { console.warn('[AUTH] Error starting:', e) }
-}
-function killAPI() {
-  if (apiProcess) { try { apiProcess.kill() } catch {}; apiProcess = null }
+  }
+  function processQueue() {
+    if (dbLock || dbQueue.length === 0) return
+    dbLock = true
+    const { fn, resolve, reject } = dbQueue.shift()
+    setImmediate(async () => {
+      try { resolve(await fn()) }
+      catch (e) { reject(e) }
+      finally { dbLock = false; processQueue() }
+    })
+  }
+
+  const sseClients = new Set<any>()
+  const srv = require('express')()
+  srv.use(require('cors')({ origin: '*' }))
+  srv.use(require('express').json())
+
+  srv.get('/api/events', (req: any, res: any) => {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive', 'Access-Control-Allow-Origin': '*',
+    })
+    res.write('data: {"type":"connected"}\n\n')
+    sseClients.add(res)
+    const cleanup = () => { sseClients.delete(res); res.removeListener('close', cleanup); res.removeListener('error', cleanup) }
+    res.on('close', cleanup); res.on('error', cleanup)
+  })
+  function broadcast(event: any) {
+    const msg = `data: ${JSON.stringify(event)}\n\n`
+    for (const c of sseClients) { try { c.write(msg) } catch { sseClients.delete(c) } }
+  }
+  setInterval(() => {
+    for (const c of sseClients) { try { c.write(':heartbeat\n\n') } catch { sseClients.delete(c) } }
+  }, 30000)
+
+  function sanitize(str: string) {
+    if (typeof str !== 'string') return ''
+    return str.replace(/[<>"']/g, '').trim().slice(0, 100)
+  }
+
+  srv.post('/api/signup', async (req: any, res: any) => {
+    const username = sanitize(req.body.username)
+    const email = sanitize(req.body.email)
+    const password = req.body.password
+    if (!username || !email || !password) return res.status(400).json({ error: 'Username, email and password required' })
+    if (password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' })
+    const result: any = await withDB(() => {
+      const users = loadUsers()
+      if (users.find((u: any) => u.email === email)) return { error: 'An account with this email already exists' }
+      const hash = hashPassword(password)
+      const token = generateToken()
+      const user = { id: `user_${Date.now()}`, username, email, password: hash, token, createdAt: new Date().toISOString() }
+      users.push(user); saveUsers(users)
+      return { ok: true, token, user: { id: user.id, username: user.username, email: user.email } }
+    })
+    if (result.error) return res.status(409).json(result)
+    broadcast({ type: 'user_created', user: result.user, token: result.token })
+    res.json(result)
+  })
+
+  srv.post('/api/login', async (req: any, res: any) => {
+    const email = sanitize(req.body.email)
+    const password = req.body.password
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' })
+    const result: any = await withDB(() => {
+      const users = loadUsers()
+      const user = users.find((u: any) => u.email === email)
+      if (!user || !verifyPassword(password, user.password)) return { error: 'Account not found. Please sign up first.' }
+      if (isLegacyHash(user.password)) user.password = hashPassword(password)
+      const token = generateToken()
+      user.token = token; saveUsers(users)
+      return { ok: true, token, user: { id: user.id, username: user.username, email: user.email } }
+    })
+    if (result.error) return res.status(403).json(result)
+    broadcast({ type: 'user_logged_in', user: result.user, token: result.token })
+    res.json(result)
+  })
+
+  srv.post('/api/verify-session', (req: any, res: any) => {
+    const authHeader = req.headers.authorization
+    const token = authHeader && authHeader.split(' ')[1]
+    if (!token) return res.status(401).json({ error: 'Token not provided' })
+    const users = loadUsers()
+    const user = users.find((u: any) => u.token === token)
+    if (!user) return res.status(403).json({ error: 'Account does not exist or has been disabled in the application database.' })
+    res.json({ valid: true, user: { id: user.id, username: user.username, email: user.email } })
+  })
+
+  srv.get('/api/user', (req: any, res: any) => {
+    const authHeader = req.headers.authorization
+    const token = authHeader && authHeader.split(' ')[1]
+    if (!token) return res.status(401).json({ error: 'No token' })
+    const users = loadUsers()
+    const user = users.find((u: any) => u.token === token)
+    if (!user) return res.status(403).json({ error: 'User not found' })
+    res.json({ id: user.id, username: user.username, email: user.email })
+  })
+
+  srv.get('/api/users', (_req: any, res: any) => {
+    res.json({ total: loadUsers().length })
+  })
+
+  srv.use((err: any, _req: any, res: any, _next: any) => {
+    console.error('[ZEK BRIDGE API] Unhandled error:', err)
+    res.status(500).json({ error: 'Internal server error' })
+  })
+
+  const server = srv.listen(6060)
+  server.on('listening', () => console.log('[ZEK BRIDGE API] Inline server on http://localhost:6060 (data:', DB_PATH, ')'))
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log('[ZEK BRIDGE API] Port 6060 in use (external API running)')
+      return
+    }
+    console.error('[ZEK BRIDGE API] Failed:', err)
+  })
+
+  app.on('before-quit', () => { try { server.close() } catch {} })
 }
 
 startAPI()
@@ -431,7 +567,7 @@ ipcMain.handle('update:download', () => { autoUpdater.downloadUpdate() })
 ipcMain.handle('update:install', () => { autoUpdater.quitAndInstall() })
 
 // ── Auth (direct fetch to local auth server) ──
-const AUTH_API = 'http://localhost:6061/api'
+const AUTH_API = 'http://localhost:6060/api'
 
 async function authFetch(endpoint: string, body: any = null, token: string | null = null) {
   const maxWait = 6000
@@ -530,5 +666,3 @@ ipcMain.handle('terminal:kill', (_e, id: string) => {
 })
 
 // ── Cleanup ZEK BRIDGE API on exit ──
-process.on('exit', () => killAPI())
-app.on('before-quit', () => killAPI())
