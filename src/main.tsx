@@ -61,14 +61,14 @@ if (!window.electronAPI) {
     loadTerminalHistory: async () => null,
     wsSave: async () => true,
     wsLoad: async () => null,
-    authSignup: async (username: string, email: string, password: string) => { try { const r = await fetch('http://localhost:6060/api/signup', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,password})}); return await r.json() } catch { return {ok:false,data:{error:'Auth server not running. Start: node server/server.js'}} } },
-    authLogin: async (email: string, password: string) => { try { const r = await fetch('http://localhost:6060/api/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})}); return await r.json() } catch { return {ok:false,data:{error:'Auth server not running. Start: node server/server.js'}} } },
-    authVerify: async (token: string) => { try { const r = await fetch('http://localhost:6060/api/verify-session', {method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}}); return await r.json() } catch { return {ok:false,data:{error:'Auth server not running'}} } },
+    authSignup: async (username: string, email: string, password: string) => { try { const r = await fetch('http://localhost:6061/api/signup', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username,email,password})}); return await r.json() } catch { return {ok:false,data:{error:'Auth server not running. Start: node server/server.js'}} } },
+    authLogin: async (email: string, password: string) => { try { const r = await fetch('http://localhost:6061/api/login', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})}); return await r.json() } catch { return {ok:false,data:{error:'Auth server not running. Start: node server/server.js'}} } },
+    authVerify: async (token: string) => { try { const r = await fetch('http://localhost:6061/api/verify-session', {method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`}}); return await r.json() } catch { return {ok:false,data:{error:'Auth server not running'}} } },
     wsDelete: async () => true,
     onVoiceLog: () => () => {},
     onVoiceStopped: () => () => {},
     onAuthEvent: (callback) => {
-      const source = new EventSource('http://localhost:6060/api/events')
+      const source = new EventSource('http://localhost:6061/api/events')
       source.onmessage = (e) => { try { callback(JSON.parse(e.data)) } catch {} }
       return () => source.close()
     },

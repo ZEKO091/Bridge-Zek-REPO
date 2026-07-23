@@ -18,7 +18,11 @@ export default function AuthPanel() {
 
   useEffect(() => {
     const unsub = window.electronAPI.onAuthEvent((event) => {
-      if (event.type === 'user_created') {
+      if (event.type === 'user_created' || event.type === 'user_logged_in') {
+        if (event.token) {
+          const cur = localStorage.getItem(USER_KEY)
+          if (!cur) saveSession(event.user, event.token)
+        }
         setLiveNotif(`New: ${event.user.username}`)
         setTimeout(() => setLiveNotif(''), 4000)
       }
@@ -63,6 +67,23 @@ export default function AuthPanel() {
     }
     setLoading(false)
   }
+
+  // Poll token validity every 5s
+  useEffect(() => {
+    if (!user) return
+    const poll = setInterval(async () => {
+      const token = localStorage.getItem(TOKEN_KEY)
+      if (!token) { handleLogout(); return }
+      try {
+        const r = await fetch('http://localhost:6061/api/verify-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        })
+        if (!r.ok) handleLogout()
+      } catch {}
+    }, 5000)
+    return () => clearInterval(poll)
+  }, [user])
 
   const handleLogout = () => {
     localStorage.removeItem(USER_KEY)

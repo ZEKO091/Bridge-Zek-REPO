@@ -1,6 +1,6 @@
 {
   "name": "zek-bridge",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "description": "ZEK BRIDGE - Futuristic AI Terminal Workspace",
   "author": "ZEKO",
   "main": "dist-electron/main.js",
@@ -9,9 +9,9 @@
     "url": "https://github.com/ZEKO091/Bridge-Zek-REPO.git"
   },
   "scripts": {
-    "dev": "concurrently \"node server/server.js\" \"vite\"",
+    "dev": "concurrently \"node api/index.js\" \"vite\"",
     "build": "vite build",
-    "electron:dev": "concurrently \"node server/server.js\" \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:dev": "concurrently \"node api/index.js\" \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "electron:release": "npm run build && electron-builder --win --x64 --publish always",
     "electron:build": "npm run build && electron-builder --win --x64"
   },

@@ -30,5 +30,13 @@
     "password": "pbkdf2:4170b26a2fd7d6e0e6399eedf8128ec2:5ce9670882f4af21858b4ee923616d59cfcb783ca2efd19e6bf56bb6eabe531f33e57b851b8e8f57514a5fbc38233cfc4bc0b8bcb386f0b163b38ed44a35c43a",
     "token": "0cc4431f37db463170f341b8112e019205f18fc9055e10ccb69094d17240998d",
     "createdAt": "2026-07-23T17:40:52.092Z"
+  },
+  {
+    "id": "user_1784829663580",
+    "username": "TestUser",
+    "email": "user8630@zek.app",
+    "password": "pbkdf2:14333eb3d2e7f43c05a03164be03630c:56668ff84905eedd786c372281d2b6e9407fb78bd1f7c59e4a87f34c4e39c20cbab32603efe5269bd2d81a684a58c11f066df6f9dd6ac9dd082af4ccc9ed7a6c",
+    "token": "a5f5ea231c6e703cce2e99500cd830a31847a0d13c44a783f6939b2b07af5348",
+    "createdAt": "2026-07-23T18:01:03.580Z"
   }
 ]

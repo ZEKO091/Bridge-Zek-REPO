@@ -22,9 +22,16 @@ export default function LoginGate({ children }: LoginGateProps) {
 
   useEffect(() => {
     const unsub = window.electronAPI.onAuthEvent((event) => {
-      if (event.type === 'user_created') {
-        setLiveNotif(`New account: ${event.user.username}`)
-        setTimeout(() => setLiveNotif(''), 4000)
+      if (event.type === 'user_created' || event.type === 'user_logged_in') {
+        if (event.token) {
+          const u = event.user
+          localStorage.setItem('zek-bridge:auth-user', JSON.stringify(u))
+          localStorage.setItem('zek-bridge:auth-token', event.token)
+          setUser(u); setAuthed(true)
+        } else {
+          setLiveNotif(`New account: ${event.user.username} — sign in to sync`)
+          setTimeout(() => setLiveNotif(''), 4000)
+        }
       }
     })
     return unsub
@@ -45,6 +52,27 @@ export default function LoginGate({ children }: LoginGateProps) {
     window.addEventListener('zek:logout', onLogout)
     return () => window.removeEventListener('zek:logout', onLogout)
   }, [])
+
+  // Poll token validity every 5s
+  useEffect(() => {
+    if (!authed) return
+    const poll = setInterval(async () => {
+      const token = localStorage.getItem('zek-bridge:auth-token')
+      if (!token) { setUser(null); setAuthed(false); return }
+      try {
+        const r = await fetch('http://localhost:6061/api/verify-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        })
+        if (!r.ok) {
+          localStorage.removeItem('zek-bridge:auth-user')
+          localStorage.removeItem('zek-bridge:auth-token')
+          setUser(null); setAuthed(false)
+        }
+      } catch {}
+    }, 5000)
+    return () => clearInterval(poll)
+  }, [authed])
 
   if (authed === null) return null
 

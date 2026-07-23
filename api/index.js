@@ -36,7 +36,6 @@ function hashPassword(password) {
 }
 
 function verifyPassword(password, stored) {
-    // Legacy support: SHA-256 sin salt (usuarios existentes)
     if (!stored.startsWith('pbkdf2:')) {
         const hash = crypto.createHash('sha256').update(password).digest('hex');
         return hash === stored;
@@ -78,7 +77,6 @@ function processQueue() {
     });
 }
 
-// ── SSE (Server-Sent Events) ──
 const sseClients = new Set();
 
 app.get('/api/events', (req, res) => {
@@ -109,7 +107,6 @@ function broadcast(event) {
     }
 }
 
-// Heartbeat cada 30s para mantener conexiones vivas
 setInterval(() => {
     for (const c of sseClients) {
         try { c.write(':heartbeat\n\n') } catch {
@@ -123,7 +120,6 @@ function sanitize(str) {
     return str.replace(/[<>"']/g, '').trim().slice(0, 100);
 }
 
-// Signup
 app.post('/api/signup', async (req, res) => {
     const username = sanitize(req.body.username);
     const email = sanitize(req.body.email);
@@ -151,7 +147,6 @@ app.post('/api/signup', async (req, res) => {
     res.json(result);
 });
 
-// Login
 app.post('/api/login', async (req, res) => {
     const email = sanitize(req.body.email);
     const password = req.body.password;
@@ -164,7 +159,6 @@ app.post('/api/login', async (req, res) => {
         if (!user || !verifyPassword(password, user.password)) {
             return { error: 'Account not found. Please sign up first.' };
         }
-        // Upgrade legacy SHA-256 hash to PBKDF2
         if (isLegacyHash(user.password)) {
             user.password = hashPassword(password);
         }
@@ -178,7 +172,6 @@ app.post('/api/login', async (req, res) => {
     res.json(result);
 });
 
-// Verify session
 app.post('/api/verify-session', (req, res) => {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
@@ -193,7 +186,6 @@ app.post('/api/verify-session', (req, res) => {
     res.json({ valid: true, user: { id: user.id, username: user.username, email: user.email } });
 });
 
-// Get user info
 app.get('/api/user', (req, res) => {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
@@ -204,23 +196,29 @@ app.get('/api/user', (req, res) => {
     res.json({ id: user.id, username: user.username, email: user.email });
 });
 
-// Global error handler
 app.use((err, req, res, next) => {
-    console.error('Unhandled error:', err);
+    console.error('[ZEK BRIDGE API] Unhandled error:', err);
     res.status(500).json({ error: 'Internal server error' });
 });
 
-const server = app.listen(PORT, () => {
-    console.log(`ZEK BRIDGE Auth server running on http://localhost:${PORT}`);
+const server = app.listen(PORT);
+server.on('listening', () => {
+    console.log(`[ZEK BRIDGE API] Running on http://localhost:${PORT}`);
     if (!fs.existsSync(DB_PATH)) {
         saveUsers([]);
-        console.log('Users database created at:', DB_PATH);
+        console.log('[ZEK BRIDGE API] Users database created at:', DB_PATH);
     }
 });
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.log(`[ZEK BRIDGE API] Port ${PORT} in use, using existing instance`);
+        return;
+    }
+    console.error('[ZEK BRIDGE API] Failed to start:', err);
+});
 
-// Graceful shutdown
 function shutdown() {
-    console.log('\nShutting down auth server...');
+    console.log('\n[ZEK BRIDGE API] Shutting down...');
     for (const c of sseClients) {
         try { c.end() } catch {}
     }
@@ -230,6 +228,6 @@ function shutdown() {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 process.on('uncaughtException', (err) => {
-    console.error('Uncaught exception:', err);
+    console.error('[ZEK BRIDGE API] Uncaught exception:', err);
     shutdown();
 });

@@ -8,7 +8,7 @@ import { autoUpdater } from 'electron-updater'
 let nodePty: any = null
 try { nodePty = require('node-pty') } catch { console.warn('node-pty failed to load. Terminals fallback mode.') }
 
-// ── Inline auth server (Express) ──
+// ── Inline ZEK BRIDGE API (Express) ──
 const crypto = require('crypto')
 function startAuthServer() {
   const express = require('express')
@@ -27,33 +27,105 @@ function startAuthServer() {
   function generateToken() {
     return crypto.randomBytes(32).toString('hex')
   }
+  function hashPassword(password: string) {
+    const salt = crypto.randomBytes(16).toString('hex')
+    const key = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex')
+    return 'pbkdf2:' + salt + ':' + key
+  }
+  function verifyPassword(password: string, stored: string) {
+    if (!stored.startsWith('pbkdf2:')) {
+      return crypto.createHash('sha256').update(password).digest('hex') === stored
+    }
+    const parts = stored.split(':')
+    if (parts.length !== 3) return false
+    return crypto.pbkdf2Sync(password, parts[1], 100000, 64, 'sha512').toString('hex') === parts[2]
+  }
+  function isLegacyHash(stored: string) { return !stored.startsWith('pbkdf2:') }
 
+  let dbLock = false
+  const dbQueue: any[] = []
+  function withDB(fn: any) {
+    return new Promise((resolve, reject) => {
+      dbQueue.push({ fn, resolve, reject }); processQueue()
+    })
+  }
+  function processQueue() {
+    if (dbLock || dbQueue.length === 0) return
+    dbLock = true
+    const { fn, resolve, reject } = dbQueue.shift()
+    setImmediate(async () => {
+      try { resolve(await fn()) }
+      catch (e) { reject(e) }
+      finally { dbLock = false; processQueue() }
+    })
+  }
+
+  const sseClients = new Set<any>()
   const srv = express()
   srv.use(cors({ origin: '*' }))
   srv.use(express.json())
 
-  srv.post('/api/signup', (req: any, res: any) => {
-    const { username, email, password } = req.body
-    if (!username || !email || !password) return res.status(400).json({ error: 'Username, email and password required' })
-    const users = loadUsers()
-    if (users.find((u: any) => u.email === email)) return res.status(409).json({ error: 'An account with this email already exists' })
-    const hash = crypto.createHash('sha256').update(password).digest('hex')
-    const token = generateToken()
-    const user = { id: `user_${Date.now()}`, username, email, password: hash, token, createdAt: new Date().toISOString() }
-    users.push(user); saveUsers(users)
-    res.json({ ok: true, token, user: { id: user.id, username: user.username, email: user.email } })
+  srv.get('/api/events', (req: any, res: any) => {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive', 'Access-Control-Allow-Origin': '*',
+    })
+    res.write('data: {"type":"connected"}\n\n')
+    sseClients.add(res)
+    const cleanup = () => { sseClients.delete(res); res.removeListener('close', cleanup); res.removeListener('error', cleanup) }
+    res.on('close', cleanup); res.on('error', cleanup)
   })
 
-  srv.post('/api/login', (req: any, res: any) => {
-    const { email, password } = req.body
+  function broadcast(event: any) {
+    const msg = `data: ${JSON.stringify(event)}\n\n`
+    for (const c of sseClients) { try { c.write(msg) } catch { sseClients.delete(c) } }
+  }
+
+  setInterval(() => {
+    for (const c of sseClients) { try { c.write(':heartbeat\n\n') } catch { sseClients.delete(c) } }
+  }, 30000)
+
+  function sanitize(str: string) {
+    if (typeof str !== 'string') return ''
+    return str.replace(/[<>"']/g, '').trim().slice(0, 100)
+  }
+
+  srv.post('/api/signup', async (req: any, res: any) => {
+    const username = sanitize(req.body.username)
+    const email = sanitize(req.body.email)
+    const password = req.body.password
+    if (!username || !email || !password) return res.status(400).json({ error: 'Username, email and password required' })
+    if (password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' })
+    const result: any = await withDB(() => {
+      const users = loadUsers()
+      if (users.find((u: any) => u.email === email)) return { error: 'An account with this email already exists' }
+      const hash = hashPassword(password)
+      const token = generateToken()
+      const user = { id: `user_${Date.now()}`, username, email, password: hash, token, createdAt: new Date().toISOString() }
+      users.push(user); saveUsers(users)
+      return { ok: true, token, user: { id: user.id, username: user.username, email: user.email } }
+    })
+    if (result.error) return res.status(409).json(result)
+    broadcast({ type: 'user_created', user: result.user, token: result.token })
+    res.json(result)
+  })
+
+  srv.post('/api/login', async (req: any, res: any) => {
+    const email = sanitize(req.body.email)
+    const password = req.body.password
     if (!email || !password) return res.status(400).json({ error: 'Email and password required' })
-    const users = loadUsers()
-    const hash = crypto.createHash('sha256').update(password).digest('hex')
-    const user = users.find((u: any) => u.email === email && u.password === hash)
-    if (!user) return res.status(403).json({ error: 'Account not found in the application database. Please sign up first.' })
-    const token = generateToken()
-    user.token = token; saveUsers(users)
-    res.json({ ok: true, token, user: { id: user.id, username: user.username, email: user.email } })
+    const result: any = await withDB(() => {
+      const users = loadUsers()
+      const user = users.find((u: any) => u.email === email)
+      if (!user || !verifyPassword(password, user.password)) return { error: 'Account not found. Please sign up first.' }
+      if (isLegacyHash(user.password)) user.password = hashPassword(password)
+      const token = generateToken()
+      user.token = token; saveUsers(users)
+      return { ok: true, token, user: { id: user.id, username: user.username, email: user.email } }
+    })
+    if (result.error) return res.status(403).json(result)
+    broadcast({ type: 'user_logged_in', user: result.user, token: result.token })
+    res.json(result)
   })
 
   srv.post('/api/verify-session', (req: any, res: any) => {
@@ -76,7 +148,15 @@ function startAuthServer() {
     res.json({ id: user.id, username: user.username, email: user.email })
   })
 
-  srv.listen(6060, () => console.log('Auth server running on http://localhost:6060 (data:', DB_PATH, ')'))
+  const apiServer = srv.listen(6061)
+  apiServer.on('listening', () => console.log('[ZEK BRIDGE API] Running on http://localhost:6060 (data:', DB_PATH, ')'))
+  apiServer.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log('[ZEK BRIDGE API] Port 6060 in use, using existing instance')
+      return
+    }
+    console.error('[ZEK BRIDGE API] Failed to start:', err)
+  })
 }
 startAuthServer()
 
@@ -479,7 +559,7 @@ ipcMain.handle('update:download', () => { autoUpdater.downloadUpdate() })
 ipcMain.handle('update:install', () => { autoUpdater.quitAndInstall() })
 
 // ── Auth (direct fetch to local auth server) ──
-const AUTH_API = 'http://localhost:6060/api'
+const AUTH_API = 'http://localhost:6061/api'
 
 async function authFetch(endpoint: string, body: any = null, token: string | null = null) {
   try {
