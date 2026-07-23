@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import * as I from './Icons'
+import UpdateNotification from './UpdateNotification'
 
 interface LoginGateProps {
   children: React.ReactNode
@@ -81,6 +82,10 @@ export default function LoginGate({ children }: LoginGateProps) {
     return <>{children}</>
   }
 
+  if (authed === false) {
+    // Still check for updates on login screen
+  }
+
   const handleLogin = async () => {
     setLoading(true); setMsg('')
     const res = await window.electronAPI.authLogin(email, password)
@@ -126,6 +131,7 @@ export default function LoginGate({ children }: LoginGateProps) {
 
   return (
     <div className="app-container">
+      <UpdateNotification />
       <div style={{backgroundImage:'url(/bg.png)',backgroundSize:'cover',backgroundPosition:'center',position:'fixed',top:0,left:0,width:'100%',height:'100%',zIndex:0}} />
       <div style={{position:'fixed',inset:0,zIndex:1,display:'flex',alignItems:'center',justifyContent:'center',background:'rgba(5,6,8,0.6)',backdropFilter:'blur(12px)'}}>
         <div style={{background:'rgba(20,25,35,0.85)',backdropFilter:'blur(24px)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:24,padding:40,width:400,display:'flex',flexDirection:'column',gap:16}}>
