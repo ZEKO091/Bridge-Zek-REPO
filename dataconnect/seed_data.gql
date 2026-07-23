@@ -1,0 +1,28 @@
+mutation SeedDatabase @transaction @auth(expr: "auth.token.admin == true") {
+  developer_insertMany(data: [
+    { username: "dev_alice", email: "alice@example.com", bio: "Full stack developer" },
+    { username: "dev_bob", email: "bob@example.com", bio: "UI/UX enthusiast" },
+    { username: "dev_charlie", email: "charlie@example.com", bio: "Backend wizard" }
+  ])
+  project_insertMany(data: [
+    { title: "Project Alpha", description: "First project", createdAt_expr: "request.time", vibeScore: 8 },
+    { title: "Project Beta", description: "Second project", createdAt_expr: "request.time", vibeScore: 9 },
+    { title: "Project Gamma", description: "Third project", createdAt_expr: "request.time", vibeScore: 7 }
+  ])
+  vibeRoom_insertMany(data: [
+    { name: "Alpha Room", createdAt_expr: "request.time", project: { id: "00000000-0000-0000-0000-000000000001" } },
+    { name: "Beta Room", createdAt_expr: "request.time", project: { id: "00000000-0000-0000-0000-000000000002" } }
+  ])
+  vibePrompt_insertMany(data: [
+    { content: "Make it pop", status: "open", complexityScore: 5, project: { id: "00000000-0000-0000-0000-000000000001" } },
+    { content: "Add dark mode", status: "closed", complexityScore: 3, project: { id: "00000000-0000-0000-0000-000000000002" } }
+  ])
+  agentSession_insertMany(data: [
+    { startTime_expr: "request.time", agentType: "CodingAssistant", isActive: true, project: { id: "00000000-0000-0000-0000-000000000001" } },
+    { startTime_expr: "request.time", agentType: "RefactoringBot", isActive: false, project: { id: "00000000-0000-0000-0000-000000000002" } }
+  ])
+  codeArtifact_insertMany(data: [
+    { filePath: "/src/index.js", content: "console.log('hello')", version: "1.0.0", language: "javascript", isTested: true, project: { id: "00000000-0000-0000-0000-000000000001" } },
+    { filePath: "/src/utils.js", content: "export const add = (a,b) => a+b", version: "1.1.0", language: "javascript", isTested: false, project: { id: "00000000-0000-0000-0000-000000000002" } }
+  ])
+}

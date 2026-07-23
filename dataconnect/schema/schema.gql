@@ -1,0 +1,51 @@
+type Developer @table {
+  username: String!
+  email: String!
+  bio: String
+  preferenceSettings: String
+}
+
+type Project @table {
+  title: String!
+  description: String!
+  createdAt: Timestamp!
+  repoUrl: String
+  vibeScore: Int
+  owner: Developer
+}
+
+type VibePrompt @table {
+  content: String!
+  status: String!
+  feedback: String
+  complexityScore: Int
+  project: Project!
+}
+
+type AgentSession @table {
+  startTime: Timestamp!
+  agentType: String!
+  isActive: Boolean
+  lastInteraction: Timestamp
+  project: Project!
+}
+
+type CodeArtifact @table {
+  filePath: String!
+  content: String!
+  version: String!
+  language: String
+  isTested: Boolean
+  project: Project!
+}
+
+type VibeRoom @table {
+  name: String!
+  createdAt: Timestamp
+  project: Project!
+}
+
+type RoomMembership @table(key: ["room", "developer"]) {
+  room: VibeRoom!
+  developer: Developer!
+}

@@ -1,0 +1,135 @@
+mutation CreateDeveloper @auth(level: USER) {
+  developer_insert(data: { id_expr: "auth.uid", username: "dev", email: "dev@example.com" })
+}
+
+mutation UpdateDeveloper @auth(level: USER) {
+  developer_update(key: { id_expr: "auth.uid" }, data: { bio: "Updated bio" })
+}
+
+mutation DeleteDeveloper @auth(level: USER) {
+  developer_delete(key: { id_expr: "auth.uid" })
+}
+
+query GetDeveloper @auth(level: USER) {
+  developer(key: { id_expr: "auth.uid" }) { username email }
+}
+
+query ListDevelopers @auth(level: PUBLIC, insecureReason: "Publicly visible developer directory.") {
+  developers { username bio }
+}
+
+mutation CreateProject @auth(level: USER) {
+  project_insert(data: { title: "New Project", description: "Desc", createdAt_expr: "request.time", ownerId_expr: "auth.uid" })
+}
+
+mutation UpdateProject @auth(level: USER) {
+  project_update(key: { id: "00000000-0000-0000-0000-000000000000" }, data: { title: "New Title" })
+}
+
+mutation DeleteProject @auth(level: USER) {
+  project_delete(key: { id: "00000000-0000-0000-0000-000000000000" })
+}
+
+query GetProject @auth(level: PUBLIC, insecureReason: "Projects are public portfolio items.") {
+  project(id: "00000000-0000-0000-0000-000000000000") { title description }
+}
+
+query ListProjects @auth(level: PUBLIC, insecureReason: "Public project list.") {
+  projects { title repoUrl }
+}
+
+mutation CreateVibePrompt @auth(level: USER) {
+  vibePrompt_insert(data: { content: "Prompt", status: "Active", project: { id: "00000000-0000-0000-0000-000000000000" } })
+}
+
+mutation UpdateVibePrompt @auth(level: USER) {
+  vibePrompt_update(key: { id: "00000000-0000-0000-0000-000000000000" }, data: { status: "Done" })
+}
+
+mutation DeleteVibePrompt @auth(level: USER) {
+  vibePrompt_delete(key: { id: "00000000-0000-0000-0000-000000000000" })
+}
+
+query GetVibePrompt @auth(level: USER) {
+  vibePrompt(id: "00000000-0000-0000-0000-000000000000") { content status }
+}
+
+query ListVibePrompts @auth(level: USER) {
+  vibePrompts { content complexityScore }
+}
+
+mutation CreateAgentSession @auth(level: USER) {
+  agentSession_insert(data: { startTime_expr: "request.time", agentType: "AI", project: { id: "00000000-0000-0000-0000-000000000000" } })
+}
+
+mutation UpdateAgentSession @auth(level: USER) {
+  agentSession_update(key: { id: "00000000-0000-0000-0000-000000000000" }, data: { isActive: false })
+}
+
+mutation DeleteAgentSession @auth(level: USER) {
+  agentSession_delete(key: { id: "00000000-0000-0000-0000-000000000000" })
+}
+
+query GetAgentSession @auth(level: USER) {
+  agentSession(id: "00000000-0000-0000-0000-000000000000") { agentType isActive }
+}
+
+query ListAgentSessions @auth(level: USER) {
+  agentSessions { startTime agentType }
+}
+
+mutation CreateCodeArtifact @auth(level: USER) {
+  codeArtifact_insert(data: { filePath: "main.py", content: "print()", version: "1.0", project: { id: "00000000-0000-0000-0000-000000000000" } })
+}
+
+mutation UpdateCodeArtifact @auth(level: USER) {
+  codeArtifact_update(key: { id: "00000000-0000-0000-0000-000000000000" }, data: { version: "1.1" })
+}
+
+mutation DeleteCodeArtifact @auth(level: USER) {
+  codeArtifact_delete(key: { id: "00000000-0000-0000-0000-000000000000" })
+}
+
+query GetCodeArtifact @auth(level: USER) {
+  codeArtifact(id: "00000000-0000-0000-0000-000000000000") { filePath version }
+}
+
+query ListCodeArtifacts @auth(level: USER) {
+  codeArtifacts { filePath language }
+}
+
+mutation CreateVibeRoom @auth(level: USER) {
+  vibeRoom_insert(data: { name: "Lobby", project: { id: "00000000-0000-0000-0000-000000000000" } })
+}
+
+mutation UpdateVibeRoom @auth(level: USER) {
+  vibeRoom_update(key: { id: "00000000-0000-0000-0000-000000000000" }, data: { name: "Main" })
+}
+
+mutation DeleteVibeRoom @auth(level: USER) {
+  vibeRoom_delete(key: { id: "00000000-0000-0000-0000-000000000000" })
+}
+
+query GetVibeRoom @auth(level: USER) {
+  vibeRoom(id: "00000000-0000-0000-0000-000000000000") { name }
+}
+
+query ListVibeRooms @auth(level: USER) {
+  vibeRooms { name createdAt }
+}
+
+mutation CreateRoomMembership @auth(level: USER) {
+  roomMembership_insert(data: { room: { id: "00000000-0000-0000-0000-000000000000" }, developer: { id_expr: "auth.uid" } })
+}
+
+mutation DeleteRoomMembership @auth(level: USER) {
+  roomMembership_delete(key: { roomId: "00000000-0000-0000-0000-000000000000", developerId_expr: "auth.uid" })
+}
+
+query GetRoomMembership @auth(level: USER) {
+  roomMembership(key: { roomId: "00000000-0000-0000-0000-000000000000", developerId_expr: "auth.uid" }) { room { name } }
+}
+
+query ListRoomMemberships @auth(level: USER) {
+  roomMemberships { roomId developerId }
+}
