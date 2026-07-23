@@ -91,7 +91,8 @@ export default function LoginGate({ children }: LoginGateProps) {
       localStorage.setItem('zek-bridge:auth-token', tok)
       setUser(u); setAuthed(true)
     } else {
-      setMsg(res?.data?.error || res?.error || 'Login failed')
+      const errMsg = res?.data?.error || res?.error || 'Login failed'
+      setMsg(errMsg.includes('not available') ? 'Servidor de auth no disponible. Usa ▼ Access Code con admin1612' : errMsg)
     }
     setLoading(false)
   }
@@ -117,7 +118,8 @@ export default function LoginGate({ children }: LoginGateProps) {
       localStorage.setItem('zek-bridge:auth-token', tok)
       setUser(u); setAuthed(true)
     } else {
-      setMsg(res?.data?.error || res?.error || 'Signup failed')
+      const errMsg = res?.data?.error || res?.error || 'Signup failed'
+      setMsg(errMsg.includes('not available') ? 'Servidor de auth no disponible. Usa ▼ Access Code con admin1612' : errMsg)
     }
     setLoading(false)
   }

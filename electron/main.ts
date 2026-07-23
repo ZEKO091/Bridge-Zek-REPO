@@ -495,19 +495,22 @@ ipcMain.handle('update:install', () => { autoUpdater.quitAndInstall() })
 // ── Auth (direct fetch to local auth server) ──
 const AUTH_API = 'http://localhost:6060/api'
 
-async function authFetch(endpoint: string, body: any = null, token: string | null = null) {
-  try {
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-    if (token) headers['Authorization'] = `Bearer ${token}`
-    const r = await fetch(`${AUTH_API}${endpoint}`, {
-      method: 'POST',
-      headers,
-      body: body ? JSON.stringify(body) : null,
-    })
-    return { ok: r.ok, ...await r.json() }
-  } catch {
-    return { ok: false, data: { error: 'Auth server not available' } }
+async function authFetch(endpoint: string, body: any = null, token: string | null = null, retries = 2) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      const r = await fetch(`${AUTH_API}${endpoint}`, {
+        method: 'POST',
+        headers,
+        body: body ? JSON.stringify(body) : null,
+      })
+      return { ok: r.ok, ...await r.json() }
+    } catch {
+      if (i < retries - 1) await new Promise(r => setTimeout(r, 1000))
+    }
   }
+  return { ok: false, data: { error: 'Auth server not available. Reinicia la app o usa el codigo de acceso admin1612.' } }
 }
 
 ipcMain.handle('auth:signup', async (_e, username: string, email: string, password: string) => {
