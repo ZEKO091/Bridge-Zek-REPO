@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "concurrently \"node api/index.js\" \"vite\"",
     "build": "vite build",
+    "build:cf": "vite build --config vite.web.config.ts",
     "build:web": "vite build --config vite.web.config.ts",
     "electron:dev": "concurrently \"node api/index.js\" \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "electron:release": "npm run build && electron-builder --win --x64 --publish always",
