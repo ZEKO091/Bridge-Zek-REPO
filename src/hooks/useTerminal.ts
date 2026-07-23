@@ -140,12 +140,24 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
           setCommand(terminalId, lastLine)
           // Auto-detect tool name from command
           const tools: [string, string][] = [
-            ['node', 'Node.js'], ['npm', 'npm'], ['npx', 'npx'], ['python', 'Python'],
-            ['python3', 'Python 3'], ['pip', 'pip'], ['git', 'Git'], ['docker', 'Docker'],
-            ['code', 'VS Code'], ['rustc', 'Rust'], ['cargo', 'Cargo'], ['go', 'Go'],
-            ['ollama', 'Ollama'], ['ffmpeg', 'FFmpeg'], ['pwsh', 'PowerShell'],
-            ['yarn', 'Yarn'], ['pnpm', 'pnpm'], ['deno', 'Deno'], ['bun', 'Bun'],
-            ['java', 'Java'], ['gcc', 'GCC'], ['clang', 'Clang'], ['make', 'Make'],
+            // AI Agents
+            ['claude', 'Claude'], ['codex', 'Codex'], ['gpt', 'GPT'], ['chatgpt', 'ChatGPT'],
+            ['copilot', 'GitHub Copilot'], ['cursor', 'Cursor'], ['warp', 'Warp'],
+            ['openai', 'OpenAI'], ['llama', 'Llama'], ['mistral', 'Mistral'],
+            ['gemini', 'Gemini'], ['deepseek', 'DeepSeek'], ['qwen', 'Qwen'],
+            ['ollama', 'Ollama'], ['whisper', 'Whisper'], ['transformers', 'Transformers'],
+            // AI Tools
+            ['langchain', 'LangChain'], ['llamaindex', 'LlamaIndex'], ['autogpt', 'AutoGPT'],
+            ['crewai', 'CrewAI'], ['comfyui', 'ComfyUI'], ['invokeai', 'InvokeAI'],
+            // Runtimes & Languages
+            ['node', 'Node.js'], ['npm', 'npm'], ['npx', 'npx'], ['bun', 'Bun'],
+            ['deno', 'Deno'], ['python', 'Python'], ['python3', 'Python 3'],
+            ['pip', 'pip'], ['rustc', 'Rust'], ['cargo', 'Cargo'],
+            ['go', 'Go'], ['java', 'Java'], ['gcc', 'GCC'], ['clang', 'Clang'],
+            ['make', 'Make'], ['pwsh', 'PowerShell'],
+            // Tools
+            ['git', 'Git'], ['docker', 'Docker'], ['code', 'VS Code'],
+            ['ffmpeg', 'FFmpeg'], ['yarn', 'Yarn'], ['pnpm', 'pnpm'],
             ['curl', 'cURL'], ['wget', 'Wget'], ['ssh', 'SSH'], ['ping', 'Ping'],
             ['ls', 'ls'], ['cd', 'cd'], ['dir', 'cmd'], ['echo', 'echo'],
           ]
