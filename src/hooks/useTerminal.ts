@@ -114,9 +114,21 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
         }
         return false
       }
-      // Ctrl+V → paste
+      // Ctrl+V → paste via clipboard API + fallback
       if (ctrl && !shift && e.key === 'v') {
-        navigator.clipboard.readText().then(t => { if (t) term.paste(t) }).catch(() => {})
+        e.preventDefault()
+        navigator.clipboard.readText().then(t => { if (t) { term.paste(t); window.electronAPI.writeToTerminal(terminalId, t) } }).catch(() => {
+          // Fallback: try execCommand
+          try {
+            const ta = document.createElement('textarea')
+            document.body.appendChild(ta); ta.focus()
+            if (document.execCommand('paste')) {
+              const val = ta.value
+              if (val) { term.paste(val); window.electronAPI.writeToTerminal(terminalId, val) }
+            }
+            document.body.removeChild(ta)
+          } catch {}
+        })
         return false
       }
       // Ctrl+A → select all
