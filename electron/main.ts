@@ -8,91 +8,29 @@ import { autoUpdater } from 'electron-updater'
 let nodePty: any = null
 try { nodePty = require('node-pty') } catch { console.warn('node-pty failed to load. Terminals fallback mode.') }
 
-// ── ZEK BRIDGE Auth API (inline Express) ──
-let apiServer: any = null
+// ── ZEK BRIDGE Auth Server (dedicated process) ──
+let apiProcess: any = null
 function startAPI() {
-  const express = require('express')
-  const cors = require('cors')
-  const crypto = require('crypto')
-  const DATA_DIR = process.env.ZEK_BRIDGE_DATA_DIR || app.getPath('userData')
-  try { fs.mkdirSync(DATA_DIR, { recursive: true }) } catch {}
-  const DB_PATH = path.join(DATA_DIR, 'users.json')
-  if (!fs.existsSync(DB_PATH)) fs.writeFileSync(DB_PATH, '[]', 'utf-8')
-
-  function loadUsers() {
-    try { return JSON.parse(fs.readFileSync(DB_PATH, 'utf-8')) } catch { return [] }
-  }
-  function saveUsers(users: any) { fs.writeFileSync(DB_PATH, JSON.stringify(users, null, 2), 'utf-8') }
-  function generateToken() { return crypto.randomBytes(32).toString('hex') }
-  function hashPassword(password: string) {
-    const salt = crypto.randomBytes(16).toString('hex')
-    const key = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex')
-    return 'pbkdf2:' + salt + ':' + key
-  }
-  function verifyPassword(password: string, stored: string) {
-    if (!stored.startsWith('pbkdf2:')) return crypto.createHash('sha256').update(password).digest('hex') === stored
-    const parts = stored.split(':')
-    const key = crypto.pbkdf2Sync(password, Buffer.from(parts[1], 'hex'), 100000, 64, 'sha512')
-    return key.toString('hex') === parts[2]
-  }
-
-  const srv = express()
-  srv.use(cors({ origin: '*' }))
-  srv.use(express.json())
-
-  srv.post('/api/signup', (req: any, res: any) => {
-    const { username, email, password } = req.body
-    if (!username || !email || !password) return res.status(400).json({ error: 'Username, email and password required' })
-    const users = loadUsers()
-    if (users.find((u: any) => u.email === email)) return res.status(409).json({ error: 'An account with this email already exists' })
-    const token = generateToken()
-    const user = { id: 'user_' + Date.now(), username, email, password: hashPassword(password), token, createdAt: new Date().toISOString() }
-    users.push(user); saveUsers(users)
-    res.json({ ok: true, token, user: { id: user.id, username: user.username, email: user.email } })
-  })
-
-  srv.post('/api/login', (req: any, res: any) => {
-    const { email, password } = req.body
-    if (!email || !password) return res.status(400).json({ error: 'Email and password required' })
-    const users = loadUsers()
-    const user = users.find((u: any) => u.email === email && verifyPassword(password, u.password))
-    if (!user) return res.status(403).json({ error: 'Account not found. Please sign up first.' })
-    const token = generateToken()
-    user.token = token; saveUsers(users)
-    res.json({ ok: true, token, user: { id: user.id, username: user.username, email: user.email } })
-  })
-
-  srv.post('/api/verify-session', (req: any, res: any) => {
-    const authHeader = req.headers.authorization
-    const token = authHeader && authHeader.split(' ')[1]
-    if (!token) return res.status(401).json({ error: 'Token not provided' })
-    const users = loadUsers()
-    const user = users.find((u: any) => u.token === token)
-    if (!user) return res.status(403).json({ error: 'Session expired or invalid' })
-    res.json({ valid: true, user: { id: user.id, username: user.username, email: user.email } })
-  })
-
-  srv.get('/api/user', (req: any, res: any) => {
-    const authHeader = req.headers.authorization
-    const token = authHeader && authHeader.split(' ')[1]
-    if (!token) return res.status(401).json({ error: 'No token' })
-    const users = loadUsers()
-    const user = users.find((u: any) => u.token === token)
-    if (!user) return res.status(403).json({ error: 'User not found' })
-    res.json({ id: user.id, username: user.username, email: user.email })
-  })
-
-  apiServer = srv.listen(6061, () => console.log('[ZEK BRIDGE API] Running on http://localhost:6061 (DB:', DB_PATH, ')'))
-  apiServer.on('error', (e: any) => {
-    if (e.code === 'EADDRINUSE') console.log('[ZEK BRIDGE API] Port 6061 in use, usa codigo admin1612')
-    else console.warn('[ZEK BRIDGE API] Error:', e.message)
-  })
+  const serverPath = path.join(__dirname, '..', 'server', 'server.js')
+  if (!fs.existsSync(serverPath)) { console.warn('[AUTH] server.js not found at', serverPath); return }
+  try {
+    const userDataDir = app.getPath('userData')
+    fs.mkdirSync(userDataDir, { recursive: true })
+    apiProcess = spawn('node', [serverPath], {
+      windowsHide: true,
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, ZEK_BRIDGE_DATA_DIR: userDataDir, ZEK_BRIDGE_PORT: '6061' }
+    })
+    apiProcess.stdout?.on('data', (d: Buffer) => console.log('[AUTH]', d.toString().trim()))
+    apiProcess.stderr?.on('data', (d: Buffer) => console.warn('[AUTH]', d.toString().trim()))
+    apiProcess.on('error', (e: any) => console.warn('[AUTH] Failed:', e.message))
+  } catch (e) { console.warn('[AUTH] Error starting:', e) }
 }
 function killAPI() {
-  if (apiServer) { try { apiServer.close() } catch {}; apiServer = null }
+  if (apiProcess) { try { apiProcess.kill() } catch {}; apiProcess = null }
 }
 
-try { startAPI() } catch (e) { console.warn('[ZEK BRIDGE] API init error:', e) }
+startAPI()
 
 let mainWindow: BrowserWindow | null = null
 const terminals: Map<string, any> = new Map()
@@ -493,7 +431,7 @@ ipcMain.handle('update:download', () => { autoUpdater.downloadUpdate() })
 ipcMain.handle('update:install', () => { autoUpdater.quitAndInstall() })
 
 // ── Auth (direct fetch to local auth server) ──
-const AUTH_API = 'http://localhost:6060/api'
+const AUTH_API = 'http://localhost:6061/api'
 
 async function authFetch(endpoint: string, body: any = null, token: string | null = null) {
   const maxWait = 6000

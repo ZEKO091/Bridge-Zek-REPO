@@ -5,8 +5,8 @@ const path = require('path');
 const crypto = require('crypto');
 
 const app = express();
-const PORT = 6060;
-const DATA_DIR = process.env.ZEK_BRIDGE_DATA_DIR || __dirname;
+const PORT = process.env.ZEK_BRIDGE_PORT || 6061;
+const DATA_DIR = process.env.ZEK_BRIDGE_DATA_DIR || (process.env.APPDATA ? path.join(process.env.APPDATA, 'zek-bridge') : path.join(__dirname, '..'));
 const DB_PATH = path.join(DATA_DIR, 'users.json');
 
 app.use(cors({ origin: '*' }));
