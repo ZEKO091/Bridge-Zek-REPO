@@ -1,6 +1,6 @@
 {
   "name": "zek-bridge",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "ZEK BRIDGE - Futuristic AI Terminal Workspace",
   "author": "ZEKO",
   "main": "dist-electron/main.js",
@@ -10,12 +10,11 @@
   },
   "scripts": {
     "dev": "concurrently \"node api/index.js\" \"vite\"",
-    "build": "vite build",
-    "build:cf": "vite build --config vite.web.config.ts",
-    "build:web": "vite build --config vite.web.config.ts",
+    "build": "vite build --config vite.web.config.ts",
+    "build:electron": "vite build",
     "electron:dev": "concurrently \"node api/index.js\" \"vite\" \"wait-on http://localhost:5173 && electron .\"",
-    "electron:release": "npm run build && electron-builder --win --x64 --publish always",
-    "electron:build": "npm run build && electron-builder --win --x64"
+    "electron:release": "npm run build:electron && electron-builder --win --x64 --publish always",
+    "electron:build": "npm run build:electron && electron-builder --win --x64"
   },
   "dependencies": {
     "@dataconnect/generated": "file:src/dataconnect-generated",
