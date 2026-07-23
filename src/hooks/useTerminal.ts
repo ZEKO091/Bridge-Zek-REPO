@@ -106,29 +106,19 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
         navigator.clipboard.readText().then(t => { if (t) term.paste(t) }).catch(() => {})
         return false
       }
-      // Ctrl+C → let browser copy natively, just prevent xterm handling
+      // Ctrl+C → copy only if selection exists, otherwise SIGINT
       if (ctrl && !shift && e.key === 'c') {
-        if (term.getSelection()) {
+        const sel = term.getSelection()
+        if (sel) {
+          navigator.clipboard.writeText(sel).catch(() => {})
           requestAnimationFrame(() => term.clearSelection())
           return false
         }
-        return false
+        return true
       }
-      // Ctrl+V → paste via clipboard API + fallback
+      // Ctrl+V → paste
       if (ctrl && !shift && e.key === 'v') {
-        e.preventDefault()
-        navigator.clipboard.readText().then(t => { if (t) { term.paste(t); window.electronAPI.writeToTerminal(terminalId, t) } }).catch(() => {
-          // Fallback: try execCommand
-          try {
-            const ta = document.createElement('textarea')
-            document.body.appendChild(ta); ta.focus()
-            if (document.execCommand('paste')) {
-              const val = ta.value
-              if (val) { term.paste(val); window.electronAPI.writeToTerminal(terminalId, val) }
-            }
-            document.body.removeChild(ta)
-          } catch {}
-        })
+        navigator.clipboard.readText().then(t => { if (t) term.paste(t) }).catch(() => {})
         return false
       }
       // Ctrl+A → select all
