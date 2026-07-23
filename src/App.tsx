@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { pingPresence } from './lib/firebase'
 import Sidebar from './components/Sidebar'
 import TopBar from './components/TopBar'
 import Workspace from './components/Workspace'
@@ -39,6 +40,13 @@ export default function App() {
   const current = useWorkspaceStore((s) => s.current)
   const addTerminal = useTerminalStore((s) => s.addTerminal)
   const terminals = useTerminalStore((s) => s.terminals)
+
+  // Ping presence every 30s
+  useEffect(() => {
+    pingPresence()
+    const id = setInterval(pingPresence, 30000)
+    return () => clearInterval(id)
+  }, [])
 
   useEffect(() => {
     if (!menuOpen && current && terminals.length === 0 && current.terminalCount && current.terminalCount > 0) {

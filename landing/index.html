@@ -751,6 +751,8 @@
       .demo-body { height: 520px; }
     }
   </style>
+<script src="https://www.gstatic.com/firebasejs/11.4.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.4.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -789,7 +791,7 @@
   <div class="hero-stats">
     <div class="hero-stat"><div class="hero-stat-value">v1.0.1</div><div class="hero-stat-label" id="heroStat1Label">\u00daltima Versi\u00f3n</div></div>
     <div class="hero-stat"><div class="hero-stat-value">99.9%</div><div class="hero-stat-label" id="heroStat2Label">Uptime</div></div>
-    <div class="hero-stat"><div class="hero-stat-value">4.8</div><div class="hero-stat-label" id="heroStat3Label">Valoraci\u00f3n</div></div>
+    <div class="hero-stat"><div class="hero-stat-value" id="liveCount">0</div><div class="hero-stat-label" id="heroStat3Label">Active Now</div></div>
   </div>
 </section>
 
@@ -1452,5 +1454,43 @@ document.getElementById('newTerminalBtn').addEventListener('click',function(){
   }
 })();
 </script>
-</body>
+<script>
+// ── Firebase Presence (Active Users) ──
+const fbConfig = {
+  apiKey: "AIzaSyAHJdjy3UxQBStSKkMRX0G65AOYhBQDm98",
+  authDomain: "zek-bridge.firebaseapp.com",
+  projectId: "zek-bridge",
+  storageBucket: "zek-bridge.firebasestorage.app",
+  messagingSenderId: "996451812709",
+  appId: "1:996451812709:web:915cf3924178b452accd8c"
+}
+firebase.initializeApp(fbConfig)
+const fbDb = firebase.firestore()
+const sessionId = 'sess_' + Math.random().toString(36).slice(2) + Date.now().toString(36)
+
+function pingPresence() {
+  fbDb.collection('presence').doc(sessionId).set({
+    lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+    userAgent: navigator.userAgent.slice(0, 80)
+  }).catch(() => {})
+}
+
+function getActiveCount() {
+  const cutoff = new Date(Date.now() - 120000)
+  fbDb.collection('presence')
+    .where('lastSeen', '>=', cutoff)
+    .onSnapshot(snap => {
+      const el = document.getElementById('liveCount')
+      if (el) {
+        const count = snap.size
+        el.textContent = count
+        el.style.opacity = '1'
+      }
+    }, () => {})
+}
+
+pingPresence()
+setInterval(pingPresence, 30000)
+getActiveCount()
+</script></body>
 </html>

@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app"
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, User } from "firebase/auth"
-import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore"
+import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, Timestamp, deleteDoc, writeBatch } from "firebase/firestore"
 
 const firebaseConfig = {
   apiKey: "AIzaSyAHJdjy3UxQBStSKkMRX0G65AOYhBQDm98",
@@ -44,3 +44,38 @@ export async function getUserProfile(uid: string) {
   const snap = await getDoc(doc(db, "users", uid))
   return snap.exists() ? snap.data() : null
 }
+
+// ── Active User Presence ──
+const SESSION_ID = 'session_' + Math.random().toString(36).slice(2) + Date.now().toString(36)
+const ACTIVE_TIMEOUT = 120000 // 2 minutes
+
+export async function pingPresence() {
+  try {
+    await setDoc(doc(db, "presence", SESSION_ID), {
+      lastSeen: Timestamp.now(),
+      userAgent: navigator.userAgent.slice(0, 80),
+    })
+  } catch {}
+}
+
+export async function getActiveCount(): Promise<number> {
+  try {
+    const cutoff = Timestamp.fromMillis(Date.now() - ACTIVE_TIMEOUT)
+    const q = query(collection(db, "presence"), where("lastSeen", ">=", cutoff))
+    const snap = await getDocs(q)
+    return snap.size
+  } catch { return 0 }
+}
+
+// Cleanup stale entries (runs every 5 minutes)
+setInterval(async () => {
+  try {
+    const cutoff = Timestamp.fromMillis(Date.now() - ACTIVE_TIMEOUT)
+    const q = query(collection(db, "presence"), where("lastSeen", "<", cutoff))
+    const snap = await getDocs(q)
+    if (snap.empty) return
+    const batch = writeBatch(db)
+    snap.docs.forEach(d => batch.delete(d.ref))
+    await batch.commit()
+  } catch {}
+}, 300000)
