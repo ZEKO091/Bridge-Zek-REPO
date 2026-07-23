@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import TerminalCard from './TerminalCard'
 import { useTerminalStore, MAX_TERMINALS, canAddTerminal, notifyMaxTerminals } from '../store/terminalStore'
+import { useWorkspaceStore } from '../store/workspaceStore'
 import * as I from './Icons'
 
 function getCols(count: number): number {
@@ -13,41 +14,49 @@ function getCols(count: number): number {
 export default function Workspace() {
   const terminals = useTerminalStore((s) => s.terminals)
   const addTerminal = useTerminalStore((s) => s.addTerminal)
+  const activeSubId = useWorkspaceStore((s) => s.activeSubId)
+  const subs = useWorkspaceStore((s) => s.current?.subWorkspaces || [])
+
+  // Filter terminals by active sub-workspace
+  const filtered = useMemo(() => {
+    if (!activeSubId) return terminals.filter(t => !t.subWorkspaceId)
+    return terminals.filter(t => t.subWorkspaceId === activeSubId)
+  }, [terminals, activeSubId])
 
   const handleNewTerminal = useCallback(async () => {
     if (!canAddTerminal()) { notifyMaxTerminals(); return }
     try {
       const id = await window.electronAPI.createTerminal()
-      addTerminal(id)
+      addTerminal(id, activeSubId || undefined)
     } catch {}
-  }, [addTerminal])
+  }, [addTerminal, activeSubId])
 
-  const cols = useMemo(() => getCols(terminals.length), [terminals.length])
-  const rows = terminals.length > 0 ? Math.ceil(terminals.length / cols) : 1
+  const cols = useMemo(() => getCols(filtered.length), [filtered.length])
+  const sub = subs.find(s => s.id === activeSubId)
 
   return (
     <div className="workspace">
       <div className="workspace-header">
         <div className="workspace-title">
           <I.IconTerminal size={20} className="workspace-icon" />
-          <h2>Bridge Lab</h2>
-          <span className="workspace-badge">{terminals.length}/12</span>
+          <h2>{sub ? sub.name : 'Bridge Lab'}</h2>
+          <span className="workspace-badge">{filtered.length}/{sub?.terminalCount || MAX_TERMINALS}</span>
         </div>
         <button
           className="new-terminal-btn"
           onClick={handleNewTerminal}
-          disabled={terminals.length >= 12}
-          style={{ opacity: terminals.length >= 12 ? 0.4 : 1 }}
+          disabled={!canAddTerminal()}
+          style={{ opacity: !canAddTerminal() ? 0.4 : 1 }}
         >
           <span className="new-terminal-plus">+</span>
           New Terminal
         </button>
       </div>
-      {terminals.length === 0 ? (
+      {filtered.length === 0 ? (
         <div className="workspace-empty">
           <div className="empty-icon">〉</div>
-          <h3>No Active Terminals</h3>
-          <p>Open a new terminal to start running your agents in the Bridge lab.</p>
+          <h3>{sub ? `No terminals in ${sub.name}` : 'No Active Terminals'}</h3>
+          <p>Open a new terminal to start working.</p>
           <button className="empty-action-btn" onClick={handleNewTerminal}>
             <span className="new-terminal-plus">+</span>
             Open Terminal
@@ -67,7 +76,7 @@ export default function Workspace() {
             minHeight: 0,
           }}
         >
-          {terminals.map((t) => (
+          {filtered.map((t) => (
             <TerminalCard key={t.id} terminalId={t.id} />
           ))}
         </div>

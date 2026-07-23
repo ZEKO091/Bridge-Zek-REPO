@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useSystemStore } from '../store/systemStore'
 import { useAppStore } from '../store/appStore'
 import { useTerminalStore, canAddTerminal, notifyMaxTerminals, MAX_TERMINALS } from '../store/terminalStore'
-import { useWorkspaceStore } from '../store/workspaceStore'
+import { useWorkspaceStore, SubWorkspace } from '../store/workspaceStore'
+import SubWorkspacePanel from './SubWorkspacePanel'
 import * as I from './Icons'
 
 export default function TopBar() {
@@ -52,7 +53,8 @@ export default function TopBar() {
       if (!canAddTerminal()) { notifyMaxTerminals(); return }
       const id = await window.electronAPI.createTerminal()
       await window.electronAPI.writeToTerminal(id, `${trimmed}\r`)
-      useTerminalStore.getState().addTerminal(id)
+      const activeSubId = useWorkspaceStore.getState().activeSubId
+      useTerminalStore.getState().addTerminal(id, activeSubId || undefined)
       setQuery(''); inputRef.current?.blur()
     } catch {}
   }
@@ -61,11 +63,12 @@ export default function TopBar() {
     <div className="top-bar">
       <div className="top-bar-left">
         <div className="top-bar-workspace">
-          <I.IconWorkspaces size={16}/>
+          <span className="top-bar-icon">▦</span>
           <span className="ws-name">{current?.name || 'Bridge Lab'}</span>
-          <span className="ws-badge" title={`Auto-saved ${new Date(lastSaved || Date.now()).toLocaleTimeString()}`}>●</span>
+          <span className="ws-badge" title={current?.path}>●</span>
           <button className="ws-close" onClick={closeWorkspace} title="Close workspace">✕</button>
         </div>
+        <SubWorkspacePanel />
         <div className="top-bar-model" onClick={() => notify(`GPU: ${gpuName}`)} style={{ cursor: 'pointer' }}>
           <span className="model-dot" />
           <span>{gpuName.includes('Unknown') ? 'Local Machine' : gpuName.slice(0, 20)}</span>

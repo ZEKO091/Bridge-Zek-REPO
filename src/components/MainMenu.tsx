@@ -33,7 +33,7 @@ export default function MainMenu() {
   const openWS = async (path: string, name: string, count = 2) => {
     const capped = Math.min(count, MAX_TERMINALS)
     if (!canAddTerminal()) { notifyMaxTerminals(); return }
-    setWorkspace({ path, name, openedAt: Date.now() }, capped)
+    setWorkspace({ path, name, openedAt: Date.now(), subWorkspaces: [] }, capped)
     closeMenu()
     for (let i = 0; i < capped; i++) {
       if (!canAddTerminal()) break

@@ -12,6 +12,7 @@ export interface TerminalInstance {
   runtime: number
   tokenCount: number
   createdAt: number
+  subWorkspaceId?: string
 }
 
 interface TerminalStore {
@@ -24,7 +25,7 @@ interface TerminalStore {
 
 export const useTerminalStore = create<TerminalStore>((set, get) => ({
   terminals: [],
-  addTerminal: (id) => {
+  addTerminal: (id, subWorkspaceId?: string) => {
     const state = get()
     if (state.terminals.length >= MAX_TERMINALS) return false
     set((state) => ({
@@ -40,6 +41,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
           runtime: 0,
           tokenCount: 0,
           createdAt: Date.now(),
+          subWorkspaceId,
         },
       ],
     }))

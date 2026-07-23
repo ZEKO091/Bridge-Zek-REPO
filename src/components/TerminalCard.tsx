@@ -65,7 +65,8 @@ export default function TerminalCard({ terminalId }: TerminalCardProps) {
     removeTerminal(terminalId)
     try {
       const id = await window.electronAPI.createTerminal()
-      useTerminalStore.getState().addTerminal(id)
+      const subId = terminal?.subWorkspaceId
+      useTerminalStore.getState().addTerminal(id, subId)
     } catch {}
   }
 
