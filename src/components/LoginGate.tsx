@@ -17,7 +17,18 @@ export default function LoginGate({ children }: LoginGateProps) {
   const [showPwd, setShowPwd] = useState(false)
   const [showCode, setShowCode] = useState(false)
   const [accessCode, setAccessCode] = useState('')
+  const [liveNotif, setLiveNotif] = useState('')
   const BYPASS_CODE = 'admin1612'
+
+  useEffect(() => {
+    const unsub = window.electronAPI.onAuthEvent((event) => {
+      if (event.type === 'user_created') {
+        setLiveNotif(`New account: ${event.user.username}`)
+        setTimeout(() => setLiveNotif(''), 4000)
+      }
+    })
+    return unsub
+  }, [])
 
   useEffect(() => {
     const token = localStorage.getItem('zek-bridge:auth-token')
@@ -86,6 +97,7 @@ export default function LoginGate({ children }: LoginGateProps) {
             <div style={{fontSize:10,letterSpacing:10,color:'var(--text-muted)',marginTop:4}}>BRIDGE</div>
           </div>
 
+          {liveNotif && <p style={{fontSize:11,color:'#22C55E',fontFamily:'JetBrains Mono,monospace',textAlign:'center',padding:'4px 8px',background:'rgba(34,197,94,0.08)',borderRadius:6,lineHeight:1.3}}>● {liveNotif}</p>}
           {msg && <p style={{fontSize:12,color:'#EF4444',fontFamily:'JetBrains Mono,monospace',textAlign:'center',padding:'6px 10px',background:'rgba(239,68,68,0.06)',borderRadius:6,lineHeight:1.3}}>{msg}</p>}
 
           {view === 'login' ? (

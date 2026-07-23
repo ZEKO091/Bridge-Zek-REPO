@@ -67,6 +67,11 @@ if (!window.electronAPI) {
     wsDelete: async () => true,
     onVoiceLog: () => () => {},
     onVoiceStopped: () => () => {},
+    onAuthEvent: (callback) => {
+      const source = new EventSource('http://localhost:6060/api/events')
+      source.onmessage = (e) => { try { callback(JSON.parse(e.data)) } catch {} }
+      return () => source.close()
+    },
     checkUpdate: async () => {},
     downloadUpdate: async () => {},
     installUpdate: async () => {},

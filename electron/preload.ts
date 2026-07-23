@@ -1,5 +1,18 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
+// ── Auth event listeners (SSE desde preload)
+const authCallbacks: ((event: any) => void)[] = []
+try {
+  const source = new EventSource('http://localhost:6060/api/events')
+  source.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data)
+      authCallbacks.forEach(cb => cb(data))
+    } catch {}
+  }
+  source.onerror = () => {} // reconecta automaticamente
+} catch {}
+
 contextBridge.exposeInMainWorld('electronAPI', {
   minimize: () => ipcRenderer.send('window:minimize'),
   maximize: () => ipcRenderer.send('window:maximize'),
@@ -84,4 +97,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   authSignup: (username: string, email: string, password: string) => ipcRenderer.invoke('auth:signup', username, email, password),
   authLogin: (email: string, password: string) => ipcRenderer.invoke('auth:login', email, password),
   authVerify: (token: string) => ipcRenderer.invoke('auth:verify', token),
+  onAuthEvent: (callback: (event: any) => void) => {
+    authCallbacks.push(callback)
+    return () => {
+      const idx = authCallbacks.indexOf(callback)
+      if (idx >= 0) authCallbacks.splice(idx, 1)
+    }
+  },
 })

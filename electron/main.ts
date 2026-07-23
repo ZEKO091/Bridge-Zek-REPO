@@ -422,22 +422,32 @@ ipcMain.handle('update:check', () => { autoUpdater.checkForUpdates() })
 ipcMain.handle('update:download', () => { autoUpdater.downloadUpdate() })
 ipcMain.handle('update:install', () => { autoUpdater.quitAndInstall() })
 
-// ── Auth ──
-const auth = path.join(__dirname, 'webSyncService.js')
-let authApi: any = null
-try { authApi = require(auth) } catch { console.warn('Auth service not available') }
+// ── Auth (direct fetch to local auth server) ──
+const AUTH_API = 'http://localhost:6060/api'
+
+async function authFetch(endpoint: string, body: any = null, token: string | null = null) {
+  try {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const r = await fetch(`${AUTH_API}${endpoint}`, {
+      method: 'POST',
+      headers,
+      body: body ? JSON.stringify(body) : null,
+    })
+    return { ok: r.ok, ...await r.json() }
+  } catch {
+    return { ok: false, data: { error: 'Auth server not available' } }
+  }
+}
 
 ipcMain.handle('auth:signup', async (_e, username: string, email: string, password: string) => {
-  if (!authApi) return { ok: false, data: { error: 'Auth server not available' } }
-  return authApi.signup(username, email, password)
+  return authFetch('/signup', { username, email, password })
 })
 ipcMain.handle('auth:login', async (_e, email: string, password: string) => {
-  if (!authApi) return { ok: false, data: { error: 'Auth server not available' } }
-  return authApi.login(email, password)
+  return authFetch('/login', { email, password })
 })
 ipcMain.handle('auth:verify', async (_e, token: string) => {
-  if (!authApi) return { ok: false, data: { error: 'Auth server not available' } }
-  return authApi.verifySession(token)
+  return authFetch('/verify-session', null, token)
 })
 
 ipcMain.handle('shell:run', async (_e, cmd: string) => {

@@ -1,4 +1,4 @@
-import http.server, json, os, urllib.parse, socketserver, subprocess, sys, multiprocessing
+import http.server, json, os, urllib.parse, socketserver, subprocess, sys, multiprocessing, urllib.request
 
 DIST = os.path.join(os.path.dirname(__file__), 'dist')
 
@@ -53,7 +53,19 @@ class ZEKHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(status); self.send_header('Content-Type', 'application/json'); self.end_headers()
         self.wfile.write(json.dumps(data).encode())
 
+def auth_server_alive():
+    try:
+        urllib.request.urlopen('http://localhost:6060/api/user', timeout=2)
+        return True
+    except urllib.error.HTTPError:
+        return True  # 401 means server IS running
+    except:
+        return False
+
 def start_auth_server():
+    if auth_server_alive():
+        print('Auth server already running on http://localhost:6060')
+        return None
     script = os.path.join(os.path.dirname(__file__), 'server', 'server.js')
     if os.path.exists(script):
         try:

@@ -45,6 +45,7 @@ interface ElectronAPI {
   authSignup: (username: string, email: string, password: string) => Promise<any>
   authLogin: (email: string, password: string) => Promise<any>
   authVerify: (token: string) => Promise<any>
+  onAuthEvent: (callback: (event: { type: string; user: { id: string; username: string; email: string } }) => void) => () => void
 }
 
 interface DirEntry { name: string; isDirectory: boolean; isFile: boolean; size: number }

@@ -14,6 +14,17 @@ export default function AuthPanel() {
   const [msg, setMsg] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPwd, setShowPwd] = useState(false)
+  const [liveNotif, setLiveNotif] = useState('')
+
+  useEffect(() => {
+    const unsub = window.electronAPI.onAuthEvent((event) => {
+      if (event.type === 'user_created') {
+        setLiveNotif(`New: ${event.user.username}`)
+        setTimeout(() => setLiveNotif(''), 4000)
+      }
+    })
+    return unsub
+  }, [])
 
   useEffect(() => {
     const stored = localStorage.getItem(USER_KEY)
@@ -61,7 +72,8 @@ export default function AuthPanel() {
 
   return (
     <>
-      <div className="ai-section">
+        {liveNotif && <p style={{fontSize:10,color:'#22C55E',fontFamily:'JetBrains Mono,monospace',textAlign:'center',padding:'3px 6px',background:'rgba(34,197,94,0.08)',borderRadius:4,marginBottom:4}}>● {liveNotif}</p>}
+        <div className="ai-section">
         <div className="ai-section-title">
           <I.IconAgent size={14} className="ai-section-icon" />
           <span>Account</span>
