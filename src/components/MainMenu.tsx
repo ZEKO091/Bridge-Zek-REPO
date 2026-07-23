@@ -5,6 +5,7 @@ import { useSystemStore } from '../store/systemStore'
 import { useAppStore } from '../store/appStore'
 import * as I from './Icons'
 import { initAudio } from '../lib/sound'
+import { useLanguage } from '../hooks/useLanguage'
 
 export default function MainMenu() {
   const [showCreate, setShowCreate] = useState(false)
@@ -55,11 +56,13 @@ export default function MainMenu() {
     }
   }
 
+  const { t } = useLanguage()
+
   const cards = [
-    { id:'new', icon:<I.IconPlus size={20}/>, title:'New Workspace', color:'#00E5FF' },
-    { id:'open', icon:<I.IconFolderOpen size={20}/>, title:'Open Workspace', color:'#3B82F6' },
-    { id:'terminal', icon:<I.IconTerminal size={20}/>, title:'Terminal', color:'#7C3AED' },
-    { id:'agents', icon:<I.IconAgent size={20}/>, title:'AI Agents', color:'#7DF9FF' },
+    { id:'new', icon:<I.IconPlus size={20}/>, title:t('menu.new'), color:'#00E5FF' },
+    { id:'open', icon:<I.IconFolderOpen size={20}/>, title:t('menu.open'), color:'#3B82F6' },
+    { id:'terminal', icon:<I.IconTerminal size={20}/>, title:t('menu.terminal'), color:'#7C3AED' },
+    { id:'agents', icon:<I.IconAgent size={20}/>, title:t('menu.agents'), color:'#7DF9FF' },
   ]
 
   const installed = tools.filter(t => t.installed)
@@ -108,10 +111,10 @@ export default function MainMenu() {
 
           <div className="mm-bottom">
             <button className="mm-bottom-btn" onClick={() => { setShowOpen(true); setOpenTermCount(2) }}>
-              <I.IconFolderOpen size={14} /> Import
+              <I.IconFolderOpen size={14} /> {t('menu.import')}
             </button>
             <button className="mm-bottom-btn" onClick={() => setShowCreate(true)}>
-              <I.IconPlus size={14} /> New Project
+              <I.IconPlus size={14} /> {t('menu.newProject')}
             </button>
           </div>
         </div>
