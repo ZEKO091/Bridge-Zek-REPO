@@ -14,6 +14,7 @@ export default function LoginGate({ children }: LoginGateProps) {
   const [msg, setMsg] = useState('')
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState<{ username: string; email: string } | null>(null)
+  const [showPwd, setShowPwd] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem('zek-bridge:auth-token')
@@ -81,8 +82,14 @@ export default function LoginGate({ children }: LoginGateProps) {
                   style={{width:'100%',padding:'8px 12px',marginTop:4,background:'rgba(0,0,0,0.3)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:8,color:'var(--text-primary)',fontFamily:'inherit',fontSize:13,outline:'none'}} />
               </div>
               <div><label style={{fontSize:10,color:'var(--text-muted)',letterSpacing:1,textTransform:'uppercase'}}>Password</label>
-                <input type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')handleLogin()}} placeholder="********"
-                  style={{width:'100%',padding:'8px 12px',marginTop:4,background:'rgba(0,0,0,0.3)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:8,color:'var(--text-primary)',fontFamily:'inherit',fontSize:13,outline:'none'}} />
+                <div style={{position:'relative',marginTop:4}}>
+                  <input type={showPwd?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')handleLogin()}} placeholder="********"
+                    style={{width:'100%',padding:'8px 12px',paddingRight:36,background:'rgba(0,0,0,0.3)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:8,color:'var(--text-primary)',fontFamily:'inherit',fontSize:13,outline:'none'}} />
+                  <button onClick={()=>setShowPwd(!showPwd)} tabIndex={-1}
+                    style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--text-muted)',fontSize:14,padding:4,lineHeight:1}}>
+                    {showPwd ? '◉' : '◯'}
+                  </button>
+                </div>
               </div>
               <button onClick={handleLogin} disabled={loading}
                 style={{width:'100%',padding:'10px',background:'linear-gradient(135deg,rgba(0,229,255,0.15),rgba(124,58,237,0.15))',border:'1px solid rgba(0,229,255,0.2)',borderRadius:8,color:'var(--glow-cyan)',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:600}}>
@@ -105,8 +112,14 @@ export default function LoginGate({ children }: LoginGateProps) {
                   style={{width:'100%',padding:'8px 12px',marginTop:4,background:'rgba(0,0,0,0.3)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:8,color:'var(--text-primary)',fontFamily:'inherit',fontSize:13,outline:'none'}} />
               </div>
               <div><label style={{fontSize:10,color:'var(--text-muted)',letterSpacing:1,textTransform:'uppercase'}}>Password</label>
-                <input type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')handleSignup()}} placeholder="********"
-                  style={{width:'100%',padding:'8px 12px',marginTop:4,background:'rgba(0,0,0,0.3)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:8,color:'var(--text-primary)',fontFamily:'inherit',fontSize:13,outline:'none'}} />
+                <div style={{position:'relative',marginTop:4}}>
+                  <input type={showPwd?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')handleSignup()}} placeholder="********"
+                    style={{width:'100%',padding:'8px 12px',paddingRight:36,background:'rgba(0,0,0,0.3)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:8,color:'var(--text-primary)',fontFamily:'inherit',fontSize:13,outline:'none'}} />
+                  <button onClick={()=>setShowPwd(!showPwd)} tabIndex={-1}
+                    style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--text-muted)',fontSize:14,padding:4,lineHeight:1}}>
+                    {showPwd ? '◉' : '◯'}
+                  </button>
+                </div>
               </div>
               <button onClick={handleSignup} disabled={loading}
                 style={{width:'100%',padding:'10px',background:'linear-gradient(135deg,rgba(0,229,255,0.15),rgba(124,58,237,0.15))',border:'1px solid rgba(0,229,255,0.2)',borderRadius:8,color:'var(--glow-cyan)',cursor:'pointer',fontFamily:'inherit',fontSize:13,fontWeight:600}}>

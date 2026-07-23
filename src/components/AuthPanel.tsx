@@ -13,6 +13,7 @@ export default function AuthPanel() {
   const [user, setUser] = useState<{ username: string; email: string } | null>(null)
   const [msg, setMsg] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPwd, setShowPwd] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem(USER_KEY)
@@ -86,7 +87,7 @@ export default function AuthPanel() {
             <h2>Login</h2>
             {msg && <p style={{fontSize:11,color:msg.includes('success')?'#22C55E':'#EF4444',fontFamily:'JetBrains Mono,monospace'}}>{msg}</p>}
             <div><label>Email</label><input autoFocus value={email} onChange={e=>setEmail(e.target.value)} placeholder="your@email.com" /></div>
-            <div><label>Password</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')handleLogin()}} placeholder="********" /></div>
+            <div><label>Password</label><div style={{position:'relative'}}><input type={showPwd?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')handleLogin()}} placeholder="********" style={{paddingRight:32}} /><button onClick={()=>setShowPwd(!showPwd)} tabIndex={-1} style={{position:'absolute',right:6,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--text-muted)',fontSize:12,padding:4}}>{showPwd ? '◉' : '◯'}</button></div></div>
             <div className="mm-modal-actions">
               <button className="mm-cancel" onClick={()=>setShowLogin(false)}>Cancel</button>
               <button className="mm-confirm" onClick={handleLogin} disabled={loading}>{loading?'Please wait...':'Login'}</button>
@@ -102,7 +103,7 @@ export default function AuthPanel() {
             {msg && <p style={{fontSize:11,color:msg.includes('created')?'#22C55E':'#EF4444',fontFamily:'JetBrains Mono,monospace'}}>{msg}</p>}
             <div><label>Username</label><input autoFocus value={username} onChange={e=>setUsername(e.target.value)} placeholder="Your name" /></div>
             <div><label>Email</label><input value={email} onChange={e=>setEmail(e.target.value)} placeholder="your@email.com" /></div>
-            <div><label>Password</label><input type="password" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')handleSignup()}} placeholder="********" /></div>
+            <div><label>Password</label><div style={{position:'relative'}}><input type={showPwd?'text':'password'} value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')handleSignup()}} placeholder="********" style={{paddingRight:32}} /><button onClick={()=>setShowPwd(!showPwd)} tabIndex={-1} style={{position:'absolute',right:6,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',cursor:'pointer',color:'var(--text-muted)',fontSize:12,padding:4}}>{showPwd ? '◉' : '◯'}</button></div></div>
             <div className="mm-modal-actions">
               <button className="mm-cancel" onClick={()=>setShowSignup(false)}>Cancel</button>
               <button className="mm-confirm" onClick={handleSignup} disabled={loading}>{loading?'Please wait...':'Create Account'}</button>
