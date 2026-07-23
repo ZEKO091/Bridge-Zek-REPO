@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import * as I from './Icons'
 import UpdateNotification from './UpdateNotification'
+import { auth, logIn as fbLogin, signUp as fbSignup, onAuthChange } from '../lib/firebase'
 
 interface LoginGateProps {
   children: React.ReactNode
@@ -88,16 +89,24 @@ export default function LoginGate({ children }: LoginGateProps) {
 
   const handleLogin = async () => {
     setLoading(true); setMsg('')
-    const res = await window.electronAPI.authLogin(email, password)
-    if (res?.ok) {
-      const u = res.user || res.data?.user
-      const tok = res.token || res.data?.token
+    try {
+      const fbUser = await fbLogin(email, password)
+      const u = { username: fbUser.displayName || email.split('@')[0], email: fbUser.email || email }
       localStorage.setItem('zek-bridge:auth-user', JSON.stringify(u))
-      localStorage.setItem('zek-bridge:auth-token', tok)
+      localStorage.setItem('zek-bridge:auth-token', await fbUser.getIdToken())
       setUser(u); setAuthed(true)
-    } else {
-      const errMsg = res?.data?.error || res?.error || 'Login failed'
-      setMsg(errMsg.includes('not available') ? 'Servidor de auth no disponible. Usa ▼ Access Code con admin1612' : errMsg)
+    } catch {
+      const res = await window.electronAPI.authLogin(email, password)
+      if (res?.ok) {
+        const u = res.user || res.data?.user
+        const tok = res.token || res.data?.token
+        localStorage.setItem('zek-bridge:auth-user', JSON.stringify(u))
+        localStorage.setItem('zek-bridge:auth-token', tok)
+        setUser(u); setAuthed(true)
+      } else {
+        const errMsg = res?.data?.error || res?.error || 'Login failed'
+        setMsg(errMsg.includes('not available') ? 'Servidor de auth no disponible. Usa ▼ Access Code con admin1612' : errMsg)
+      }
     }
     setLoading(false)
   }
@@ -115,16 +124,24 @@ export default function LoginGate({ children }: LoginGateProps) {
 
   const handleSignup = async () => {
     setLoading(true); setMsg('')
-    const res = await window.electronAPI.authSignup(username, email, password)
-    if (res?.ok) {
-      const u = res.user || res.data?.user
-      const tok = res.token || res.data?.token
+    try {
+      const fbUser = await fbSignup(email, password, username || email.split('@')[0])
+      const u = { username: fbUser.displayName || username || email.split('@')[0], email: fbUser.email || email }
       localStorage.setItem('zek-bridge:auth-user', JSON.stringify(u))
-      localStorage.setItem('zek-bridge:auth-token', tok)
+      localStorage.setItem('zek-bridge:auth-token', await fbUser.getIdToken())
       setUser(u); setAuthed(true)
-    } else {
-      const errMsg = res?.data?.error || res?.error || 'Signup failed'
-      setMsg(errMsg.includes('not available') ? 'Servidor de auth no disponible. Usa ▼ Access Code con admin1612' : errMsg)
+    } catch {
+      const res = await window.electronAPI.authSignup(username, email, password)
+      if (res?.ok) {
+        const u = res.user || res.data?.user
+        const tok = res.token || res.data?.token
+        localStorage.setItem('zek-bridge:auth-user', JSON.stringify(u))
+        localStorage.setItem('zek-bridge:auth-token', tok)
+        setUser(u); setAuthed(true)
+      } else {
+        const errMsg = res?.data?.error || res?.error || 'Signup failed'
+        setMsg(errMsg.includes('not available') ? 'Servidor de auth no disponible. Usa ▼ Access Code con admin1612' : errMsg)
+      }
     }
     setLoading(false)
   }
