@@ -106,12 +106,11 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
         navigator.clipboard.readText().then(t => { if (t) term.paste(t) }).catch(() => {})
         return false
       }
-      // Ctrl+C → only copy if selection exists, otherwise do nothing
+      // Ctrl+C → let browser copy natively, just prevent xterm handling
       if (ctrl && !shift && e.key === 'c') {
-        const sel = term.getSelection()
-        if (sel) {
-          navigator.clipboard.writeText(sel).catch(() => {})
+        if (term.getSelection()) {
           requestAnimationFrame(() => term.clearSelection())
+          return false
         }
         return false
       }
