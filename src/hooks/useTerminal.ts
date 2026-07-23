@@ -138,6 +138,23 @@ export function useTerminal(terminalId: string, containerRef: React.RefObject<HT
         const lastLine = lines[lines.length - 1].trim()
         if (lastLine && !lastLine.startsWith('PS') && !lastLine.startsWith('Microsoft')) {
           setCommand(terminalId, lastLine)
+          // Auto-detect tool name from command
+          const tools: [string, string][] = [
+            ['node', 'Node.js'], ['npm', 'npm'], ['npx', 'npx'], ['python', 'Python'],
+            ['python3', 'Python 3'], ['pip', 'pip'], ['git', 'Git'], ['docker', 'Docker'],
+            ['code', 'VS Code'], ['rustc', 'Rust'], ['cargo', 'Cargo'], ['go', 'Go'],
+            ['ollama', 'Ollama'], ['ffmpeg', 'FFmpeg'], ['pwsh', 'PowerShell'],
+            ['yarn', 'Yarn'], ['pnpm', 'pnpm'], ['deno', 'Deno'], ['bun', 'Bun'],
+            ['java', 'Java'], ['gcc', 'GCC'], ['clang', 'Clang'], ['make', 'Make'],
+            ['curl', 'cURL'], ['wget', 'Wget'], ['ssh', 'SSH'], ['ping', 'Ping'],
+            ['ls', 'ls'], ['cd', 'cd'], ['dir', 'cmd'], ['echo', 'echo'],
+          ]
+          for (const [cmd, name] of tools) {
+            if (lastLine.startsWith(cmd)) {
+              updateTerminal(terminalId, { name })
+              break
+            }
+          }
         }
         if (outputBuffer.length > 2000) {
           saveBuffer(); outputBuffer = ''
