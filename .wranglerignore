@@ -1,0 +1,8 @@
+functions/
+dataconnect/
+api/src/
+server/src/
+src/dataconnect-generated/
+node_modules/
+dist-electron/
+release/
