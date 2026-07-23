@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { useTerminalStore } from './terminalStore'
 
 export interface SubWorkspace {
   id: string
@@ -58,6 +59,9 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
   closeWorkspace: () => {
     localStorage.removeItem(CURRENT_KEY)
     window.electronAPI.wsDelete('current')
+    const termStore = useTerminalStore.getState()
+    termStore.terminals.forEach(t => { try { window.electronAPI.killTerminal(t.id) } catch {} })
+    termStore.terminals.forEach(t => termStore.removeTerminal(t.id))
     set({ current: null, lastSaved: Date.now(), activeSubId: null })
   },
 
