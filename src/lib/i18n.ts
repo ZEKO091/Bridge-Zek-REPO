@@ -206,3 +206,4 @@ export function onLangChange(fn: () => void): () => void {
     if (idx >= 0) listeners.splice(idx, 1)
   }
 }
+

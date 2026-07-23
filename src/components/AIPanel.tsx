@@ -1,18 +1,20 @@
 import DetectedTools from './DetectedTools'
 import SubWorkspacePanel from './SubWorkspacePanel'
 import { useTerminalStore, canAddTerminal, notifyMaxTerminals } from '../store/terminalStore'
+import { useWorkspaceStore } from '../store/workspaceStore'
 import * as I from './Icons'
 
 const quickCmds = ['node --version', 'npm start', 'python --version', 'dir', 'cd ~', 'ipconfig', 'systeminfo', 'whoami']
 
 export default function AIPanel() {
   const addTerminal = useTerminalStore((s) => s.addTerminal)
+  const activeSubId = useWorkspaceStore((s) => s.activeSubId)
 
   const runCommand = async (cmd: string) => {
     if (!canAddTerminal()) { notifyMaxTerminals(); return }
     try {
       const id = await window.electronAPI.createTerminal()
-      addTerminal(id)
+      addTerminal(id, activeSubId || undefined)
       setTimeout(async () => {
         await window.electronAPI.writeToTerminal(id, `${cmd}\r`)
       }, 200)

@@ -1,5 +1,6 @@
 import { useAppStore, View } from '../store/appStore'
 import { useTerminalStore } from '../store/terminalStore'
+import { useWorkspaceStore } from '../store/workspaceStore'
 import * as I from './Icons'
 
 const navItems: { icon: (size: number) => JSX.Element; label: string; view: View }[] = [
@@ -20,13 +21,14 @@ export default function Sidebar() {
   const setView = useAppStore((s) => s.setView)
   const addTerminal = useTerminalStore((s) => s.addTerminal)
   const terminals = useTerminalStore((s) => s.terminals)
+  const activeSubId = useWorkspaceStore((s) => s.activeSubId)
 
   const handleClick = async (item: typeof navItems[0]) => {
     setView(item.view)
     if (item.view === 'powershells' && terminals.length === 0) {
       try {
         const id = await window.electronAPI.createTerminal()
-        addTerminal(id)
+        addTerminal(id, activeSubId || undefined)
       } catch {}
     }
   }
