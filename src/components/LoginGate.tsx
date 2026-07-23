@@ -40,6 +40,12 @@ export default function LoginGate({ children }: LoginGateProps) {
     }
   }, [])
 
+  useEffect(() => {
+    const onLogout = () => { setUser(null); setAuthed(false) }
+    window.addEventListener('zek:logout', onLogout)
+    return () => window.removeEventListener('zek:logout', onLogout)
+  }, [])
+
   if (authed === null) return null
 
   if (authed && user) {

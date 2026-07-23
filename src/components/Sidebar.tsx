@@ -36,7 +36,7 @@ export default function Sidebar() {
   const handleLogout = () => {
     localStorage.removeItem('zek-bridge:auth-user')
     localStorage.removeItem('zek-bridge:auth-token')
-    window.location.reload()
+    window.dispatchEvent(new CustomEvent('zek:logout'))
   }
 
   const handleClick = async (item: typeof navItems[0]) => {

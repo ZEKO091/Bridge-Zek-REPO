@@ -68,6 +68,7 @@ export default function AuthPanel() {
     localStorage.removeItem(USER_KEY)
     localStorage.removeItem(TOKEN_KEY)
     setUser(null)
+    window.dispatchEvent(new CustomEvent('zek:logout'))
   }
 
   return (
