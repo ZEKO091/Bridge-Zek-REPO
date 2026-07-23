@@ -53,9 +53,23 @@ class ZEKHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(status); self.send_header('Content-Type', 'application/json'); self.end_headers()
         self.wfile.write(json.dumps(data).encode())
 
+def start_auth_server():
+    script = os.path.join(os.path.dirname(__file__), 'server', 'server.js')
+    if os.path.exists(script):
+        try:
+            proc = subprocess.Popen(['node', script], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW)
+            print(f'Auth server started (PID {proc.pid}) on http://localhost:6060')
+            return proc
+        except Exception as e:
+            print(f'Auth server failed to start: {e}')
+    else:
+        print(f'Server script not found: {script}')
+    return None
+
 if __name__ == '__main__':
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+    start_auth_server()
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 7070
     server = socketserver.ThreadingTCPServer(('0.0.0.0', port), ZEKHandler)
     server.allow_reuse_address = True
-    print(f'Serving on http://localhost:{port}')
+    print(f'Serving frontend on http://localhost:{port}')
     server.serve_forever()

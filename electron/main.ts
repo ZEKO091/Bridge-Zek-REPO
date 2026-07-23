@@ -8,6 +8,22 @@ import { autoUpdater } from 'electron-updater'
 let nodePty: any = null
 try { nodePty = require('node-pty') } catch { console.warn('node-pty failed to load. Terminals fallback mode.') }
 
+// ── Auto-start auth server ──
+let authServer: any = null
+;(function startAuthServer() {
+  const serverPath = path.join(__dirname, '..', 'server', 'server.js')
+  if (fs.existsSync(serverPath)) {
+    try {
+      authServer = spawn('node', [serverPath], { windowsHide: true, stdio: 'pipe', cwd: path.dirname(serverPath) })
+      console.log('Auth server started')
+      authServer.stdout?.on('data', (d: Buffer) => console.log('[auth]', d.toString().trim()))
+      authServer.stderr?.on('data', (d: Buffer) => console.error('[auth]', d.toString().trim()))
+    } catch (e) { console.warn('Failed to start auth server:', e) }
+  } else {
+    console.warn('Auth server script not found at', serverPath)
+  }
+})()
+
 let mainWindow: BrowserWindow | null = null
 const terminals: Map<string, any> = new Map()
 let terminalCounter = 0
@@ -489,3 +505,7 @@ ipcMain.handle('terminal:kill', (_e, id: string) => {
   if (term?.kill) { try { term.kill() } catch {} }
   terminals.delete(id)
 })
+
+// ── Cleanup auth server on exit ──
+process.on('exit', () => { if (authServer) { try { authServer.kill() } catch {} } })
+app.on('before-quit', () => { if (authServer) { try { authServer.kill() } catch {} } })
