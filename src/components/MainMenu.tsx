@@ -6,6 +6,7 @@ import { useAppStore } from '../store/appStore'
 import * as I from './Icons'
 import { initAudio } from '../lib/sound'
 import { useLanguage } from '../hooks/useLanguage'
+import AuthPanel from './AuthPanel'
 
 export default function MainMenu() {
   const [showCreate, setShowCreate] = useState(false)
@@ -120,6 +121,10 @@ export default function MainMenu() {
         </div>
 
         <div className="mm-side">
+          <div className="mm-panel">
+            <div className="mm-panel-title">Account</div>
+            <AuthPanel />
+          </div>
           <div className="mm-panel">
             <div className="mm-panel-title">Recent</div>
             {recent.length === 0
