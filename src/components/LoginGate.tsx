@@ -105,7 +105,7 @@ export default function LoginGate({ children }: LoginGateProps) {
         setUser(u); setAuthed(true)
       } else {
         const errMsg = res?.data?.error || res?.error || 'Login failed'
-        setMsg(errMsg.includes('not available') ? 'Servidor de auth no disponible. Usa ▼ Access Code con admin1612' : errMsg)
+        setMsg(errMsg.includes('not available') ? 'Servidor de auth no disponible. Usa ▼ Access Code' : errMsg)
       }
     }
     setLoading(false)
@@ -140,7 +140,7 @@ export default function LoginGate({ children }: LoginGateProps) {
         setUser(u); setAuthed(true)
       } else {
         const errMsg = res?.data?.error || res?.error || 'Signup failed'
-        setMsg(errMsg.includes('not available') ? 'Servidor de auth no disponible. Usa ▼ Access Code con admin1612' : errMsg)
+        setMsg(errMsg.includes('not available') ? 'Servidor de auth no disponible. Usa ▼ Access Code' : errMsg)
       }
     }
     setLoading(false)
