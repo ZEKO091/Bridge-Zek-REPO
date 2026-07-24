@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useWorkspaceStore } from '../store/workspaceStore'
-import { useTerminalStore } from '../store/terminalStore'
+import { useTerminalStore, canAddTerminal, notifyMaxTerminals } from '../store/terminalStore'
+import { useAppStore } from '../store/appStore'
 import * as I from './Icons'
 
 export default function SubWorkspacePanel() {
@@ -12,6 +13,8 @@ export default function SubWorkspacePanel() {
   const setActiveSub = useWorkspaceStore((s) => s.setActiveSub)
   const terminals = useTerminalStore((s) => s.terminals)
   const addTerminal = useTerminalStore((s) => s.addTerminal)
+  const setView = useAppStore((s) => s.setView)
+  const canAddTerminal = (useTerminalStore as any).getState ? useTerminalStore.getState().terminals.length < 12 : true
 
   const [newName, setNewName] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -30,9 +33,11 @@ export default function SubWorkspacePanel() {
     const sub = subs.find(s => s.id === subId)
     if (!sub) return
     setActiveSub(subId)
+    setView('powershells') // Switch to PowerShells view
     // Create terminals for this sub-workspace
     const existing = terminals.filter(t => t.subWorkspaceId === subId)
     for (let i = existing.length; i < sub.terminalCount; i++) {
+      if (!canAddTerminal()) { notifyMaxTerminals(); break }
       try {
         const id = await window.electronAPI.createTerminal()
         addTerminal(id, subId)

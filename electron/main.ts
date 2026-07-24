@@ -485,13 +485,13 @@ async function authFetch(endpoint: string, body: any = null, token: string | nul
 }
 
 ipcMain.handle('auth:signup', async (_e, username: string, email: string, password: string) => {
-  return authFetch('/signup', { username, email, password })
+  return authFetch('/auth/signup', { username, email, password })
 })
 ipcMain.handle('auth:login', async (_e, email: string, password: string) => {
-  return authFetch('/login', { email, password })
+  return authFetch('/auth/login', { email, password })
 })
 ipcMain.handle('auth:verify', async (_e, token: string) => {
-  return authFetch('/verify-session', null, token)
+  return authFetch('/auth/verify', null, token)
 })
 
 ipcMain.handle('shell:run', async (_e, cmd: string) => {

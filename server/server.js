@@ -211,8 +211,13 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
+// ── Passport Auth ──
+const { setupPassportAuth } = require('./passport-setup')
+setupPassportAuth(app)
+
 const server = app.listen(PORT, () => {
     console.log(`ZEK BRIDGE Auth server running on http://localhost:${PORT}`);
+    console.log(`Better Auth DB: ${require('./auth').DB_PATH}`);
     if (!fs.existsSync(DB_PATH)) {
         saveUsers([]);
         console.log('Users database created at:', DB_PATH);
