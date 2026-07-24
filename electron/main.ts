@@ -5,6 +5,16 @@ import { spawn, execSync } from 'child_process'
 import os from 'os'
 import { autoUpdater } from 'electron-updater'
 
+let isShuttingDown = false
+let updateInterval: ReturnType<typeof setInterval> | null = null
+
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] uncaughtException:', err.message)
+})
+process.on('unhandledRejection', (reason) => {
+  console.error('[FATAL] unhandledRejection:', reason)
+})
+
 let nodePty: any = null
 try { nodePty = require('node-pty') } catch { console.warn('node-pty failed to load. Terminals fallback mode.') }
 
@@ -214,15 +224,21 @@ app.whenReady().then(async () => {
   detectedTools = await detectTools()
   mainWindow?.webContents.send('system:tools', detectedTools)
 
-  autoUpdater.checkForUpdates()
-  // Check every 5 minutes, silent when no update
-  setInterval(() => autoUpdater.checkForUpdates(), 5 * 60 * 1000)
+  // Safe update check - never crashes the app
+  function safeCheckUpdates() {
+    if (isShuttingDown) return
+    autoUpdater.checkForUpdates().catch(() => {})
+  }
+
+  safeCheckUpdates()
+  updateInterval = setInterval(safeCheckUpdates, 5 * 60 * 1000)
 
   autoUpdater.on('checking-for-update', () => {
-    mainWindow?.webContents.send('update:status', 'checking')
+    if (!isShuttingDown) mainWindow?.webContents.send('update:status', 'checking')
   })
 
   autoUpdater.on('update-available', (info) => {
+    if (isShuttingDown) return
     mainWindow?.webContents.send('update:available', {
       version: info.version,
       releaseDate: info.releaseDate,
@@ -231,10 +247,11 @@ app.whenReady().then(async () => {
   })
 
   autoUpdater.on('update-not-available', () => {
-    mainWindow?.webContents.send('update:status', 'up-to-date')
+    if (!isShuttingDown) mainWindow?.webContents.send('update:status', 'up-to-date')
   })
 
   autoUpdater.on('download-progress', (progress) => {
+    if (isShuttingDown) return
     mainWindow?.webContents.send('update:progress', {
       percent: progress.percent,
       bytesPerSecond: progress.bytesPerSecond,
@@ -244,10 +261,11 @@ app.whenReady().then(async () => {
   })
 
   autoUpdater.on('update-downloaded', () => {
-    mainWindow?.webContents.send('update:downloaded')
+    if (!isShuttingDown) mainWindow?.webContents.send('update:downloaded')
   })
 
   autoUpdater.on('error', (err) => {
+    if (isShuttingDown) return
     const msg = err?.message || ''
     if (msg.includes('Cannot find latest') || msg.includes('404') || msg.includes('no versions')) {
       mainWindow?.webContents.send('update:status', 'up-to-date')
@@ -288,8 +306,11 @@ app.whenReady().then(async () => {
 })
 
 app.on('window-all-closed', () => {
+  isShuttingDown = true
+  if (updateInterval) { clearInterval(updateInterval); updateInterval = null }
   terminals.forEach((t: any) => { try { t.kill?.() } catch {} })
   terminals.clear()
+  killAPI()
   if (process.platform !== 'darwin') app.quit()
 })
 
@@ -301,8 +322,11 @@ ipcMain.on('window:maximize', () => {
   else mainWindow?.maximize()
 })
 ipcMain.on('window:close', () => {
+  isShuttingDown = true
+  if (updateInterval) { clearInterval(updateInterval); updateInterval = null }
   terminals.forEach((t: any) => { try { t.kill?.() } catch {} })
   terminals.clear()
+  killAPI()
   app.exit(0)
 })
 
@@ -426,17 +450,24 @@ ipcMain.handle('fs:writeFile', async (_e, filePath: string, content: string) => 
   } catch { return false }
 })
 
-ipcMain.handle('update:check', () => { autoUpdater.checkForUpdates() })
-ipcMain.handle('update:download', () => { autoUpdater.downloadUpdate() })
+ipcMain.handle('update:check', () => {
+  if (isShuttingDown) return
+  autoUpdater.checkForUpdates().catch(() => {})
+})
+ipcMain.handle('update:download', () => {
+  if (isShuttingDown) return
+  autoUpdater.downloadUpdate().catch(() => {})
+})
 ipcMain.handle('update:install', () => { autoUpdater.quitAndInstall() })
 
 // ── Auth (direct fetch to local auth server) ──
-const AUTH_API = 'http://localhost:6060/api'
+const AUTH_API = 'http://localhost:6061/api'
 
 async function authFetch(endpoint: string, body: any = null, token: string | null = null) {
   const maxWait = 6000
   const start = Date.now()
   while (Date.now() - start < maxWait) {
+    if (isShuttingDown) return { ok: false, data: { error: 'App is shutting down' } }
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
       if (token) headers['Authorization'] = `Bearer ${token}`

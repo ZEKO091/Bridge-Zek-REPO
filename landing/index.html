@@ -776,6 +776,9 @@
 </nav>
 
 <section class="hero">
+  <div style="display:flex;justify-content:center;margin-bottom:20px;position:relative;z-index:2;animation:fadeInDown 0.6s ease">
+    <span style="background:rgba(255,255,255,0.9);color:#050608;font-size:12px;font-weight:700;padding:7px 22px;border-radius:24px;letter-spacing:2px;text-transform:uppercase;box-shadow:0 0 20px rgba(255,255,255,0.15)">Application Coming Soon</span>
+  </div>
   <div class="hero-floats" id="heroFloats"></div>
   <div class="hero-badge">
     <span class="hero-badge-dot"></span>
@@ -791,7 +794,7 @@
   <div class="hero-stats">
     <div class="hero-stat"><div class="hero-stat-value">v1.0.1</div><div class="hero-stat-label" id="heroStat1Label">\u00daltima Versi\u00f3n</div></div>
     <div class="hero-stat"><div class="hero-stat-value">99.9%</div><div class="hero-stat-label" id="heroStat2Label">Uptime</div></div>
-    <div class="hero-stat"><div class="hero-stat-value" id="liveCount">0</div><div class="hero-stat-label" id="heroStat3Label">Active Now</div></div>
+    <div class="hero-stat"><div class="hero-stat-value" id="liveCount">0</div><div class="hero-stat-label" id="heroStat3Label">Usuarios Activos</div></div>
   </div>
 </section>
 
@@ -1468,11 +1471,11 @@ firebase.initializeApp(fbConfig)
 const fbDb = firebase.firestore()
 const sessionId = 'sess_' + Math.random().toString(36).slice(2) + Date.now().toString(36)
 
-function pingPresence() {
+function pingPresence() { try {
   fbDb.collection('presence').doc(sessionId).set({
-    lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+    lastSeen: new Date(),
     userAgent: navigator.userAgent.slice(0, 80)
-  }).catch(() => {})
+  }).catch(() => {}); try { document.getElementById('liveCount').textContent = '...' } catch(e) {} } catch(e) {}
 }
 
 function getActiveCount() {
