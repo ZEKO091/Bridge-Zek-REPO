@@ -267,6 +267,9 @@ app.whenReady().then(async () => {
   autoUpdater.on('error', (err) => {
     if (isShuttingDown) return
     const msg = err?.message || ''
+    if (msg.includes('504') || msg.includes('timeout') || msg.includes('ETIMEDOUT') || msg.includes('ECONNREFUSED')) {
+      return // Silently ignore network errors - they're transient
+    }
     if (msg.includes('Cannot find latest') || msg.includes('404') || msg.includes('no versions')) {
       mainWindow?.webContents.send('update:status', 'up-to-date')
     } else {
